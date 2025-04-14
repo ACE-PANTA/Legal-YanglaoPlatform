@@ -18,7 +18,7 @@ const defaultAvatarUrl = ref('https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b
 onMounted(() => {
   userName.value = store.userInfo.name.toString();
   showUrl.value = store.avatarUrl;
-  index.value='/'+useRoute().path.split('/')[1];
+  index.value='/'+useRoute().path.split('/')[2];
 });
 
 const handleCommand = (command: string) => {
