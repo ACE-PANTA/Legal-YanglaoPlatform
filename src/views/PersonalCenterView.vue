@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { GetStaff, GetVolunteer, UpdateStaff, UpdateStaffPassword } from '@/api';
-import { UpdateStaffPhoto } from '@/api/staff';
+import { UpdateStaffPhoto,getStaffPhoto } from '@/api/staff';
 import { sha256 } from 'js-sha256';
 import { useMainStore } from '@/store';
 
@@ -92,7 +92,22 @@ const confirmUpload = async () => {
             avatar.value = tempAvatar.value;
             tempAvatar.value = '';
             selectedFile.value = null;
-            ElMessage.success('头像更新成功');
+            ElMessage.success('头像更新成功，重新登陆后可见');
+            let store=useMainStore()
+            store.userInfo.photoUrl=res.data.photoUrl
+            if(store.userInfo.photoUrl !=''){
+                getStaffPhoto(store.userInfo.photoUrl).then(res => {
+                    if (res.data.code === 200) {
+                        store.avatarUrl = res.data.photoUrl
+                        
+                    } else {
+                        ElMessage.error("获取用户头像失败！")
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    ElMessage.error("获取用户头像失败！")
+                })
+            }
         } else {
             ElMessage.error(res.data.msg || '头像更新失败');
         }

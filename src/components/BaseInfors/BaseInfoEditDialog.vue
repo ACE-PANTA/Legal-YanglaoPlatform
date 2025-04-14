@@ -103,16 +103,6 @@
             </el-form-item>
         </el-col>
         <el-col class="form-item">
-            <el-form-item label="等级划分" prop="grading">
-                <el-select v-model="itemInfo.grading" placeholder="请选择等级划分">
-                    <el-option label="红" value="红" />
-                    <el-option label="橙" value="橙" />
-                    <el-option label="黄" value="黄" />
-                    <el-option label="绿" value="绿" />
-                </el-select>
-            </el-form-item>
-        </el-col>
-        <el-col class="form-item">
             <el-form-item label="备注" prop="remark">
                 <el-input v-model="itemInfo.remark" autocomplete="off" />
             </el-form-item>
@@ -123,7 +113,7 @@
         </div>
         <el-col class="form-item">
             <el-form-item label="单位学校" prop="employSchool">
-                <el-input v-model="itemInfo.employSchool" autocomplete="off" />
+                <el-input v-model="itemInfo.employerSchool" autocomplete="off" />
             </el-form-item>
         </el-col>
         <el-col class="form-item">
@@ -181,7 +171,7 @@
         </el-col>
         <el-col class="form-item">
             <el-form-item label="重大疾病" prop="majorDisease">
-                <el-input placeholder="请填写建档时重大疾病" v-model="itemInfo.healthInformationRequest.majorDisease" autocomplete="off" />
+                <el-input placeholder="请填写建档时重大疾病" v-model="itemInfo.healthInformationRequest.majorDiseases" autocomplete="off" />
             </el-form-item>
         </el-col>
         <el-col class="form-item">
@@ -190,7 +180,7 @@
                     <el-option label="良好" value="良好" />
                     <el-option label="高龄 (大于等于80周岁)" value="高龄" />
                     <el-option label="慢性病 (高血压/糖尿病/心脏病等需长期服药疾病)" value="慢性病" />
-                    <el-option label="失能 (依据巴氏指数评估法，进餐/穿衣/如厕等五项活动能力)" value="失能" />
+                    <el-option label="失能" value="失能" />
                 </el-select>
             </el-form-item>
         </el-col>
@@ -219,6 +209,21 @@
                 </el-select>
             </el-form-item>
         </el-col>
+        <el-col class="form-item">
+            <el-form-item label="等级划分" prop="grading">
+                <el-select v-model="itemInfo.grading" disabled placeholder="请进行评级判定">
+                    <el-option label="红" value="红" />
+                    <el-option label="橙" value="橙" />
+                    <el-option label="黄" value="黄" />
+                    <el-option label="绿" value="绿" />
+                </el-select>
+                <el-button type="success" style="margin-top: 5px;" @click="openGradeDialog">进行评级判断</el-button>
+            </el-form-item>
+        </el-col>
+        <el-dialog v-model="isGradeDialogVisible" width="50%" :destroy-on-close="true">
+            <GradeJudge @gradeEvaluated="updateGrading" />
+        </el-dialog>
+        
         <el-col class="form-item">
             <el-form-item label="备注" prop="healthRemark">
                 <el-input v-model="itemInfo.healthInformationRequest.remark" autocomplete="off" />
@@ -308,12 +313,11 @@ export default {
 
 <script setup lang="ts">
 
-import { onBeforeMount, onMounted, PropType, reactive, ref, watch } from 'vue';
-import { BasicInfTemplate, EnrollHouseHoldSpouseRequests } from '@/models';
-import ChinaAeraSelect from '../ChinaAeraSelect.vue';
-import { FormInstance, FormRules } from 'element-plus';
+import { PropType,  ref, watch } from 'vue';
+import { EnrollHouseHoldSpouseRequests } from '@/models';
+import { FormInstance } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import baseUrl from '@/utils/baseUrl';
+import GradeJudge from '@/components/BaseInfors/GradeJudge.vue';
 
 const props = defineProps({
     itemInfo: {
@@ -370,6 +374,18 @@ const beforePhotoUpload = (file: File) => {
 
 const itemInfoRef = ref<FormInstance>();
 const emit = defineEmits(['update:itemInfo', 'update:state']);
+
+const isGradeDialogVisible = ref(false);
+
+const openGradeDialog = () => {
+    isGradeDialogVisible.value = true;
+};
+
+const updateGrading = (grade: string) => {
+    props.itemInfo.grading = grade;
+    setTimeout(()=>{isGradeDialogVisible.value = false;},1000)
+    
+};
 
 </script>
 
@@ -456,5 +472,8 @@ const emit = defineEmits(['update:itemInfo', 'update:state']);
     width: 100%;
     height: 100%;
     display: block;
+}
+:deep(.el-dialog) {
+    margin-top: 15vh !important; /* 确保弹窗居中显示 */
 }
 </style>

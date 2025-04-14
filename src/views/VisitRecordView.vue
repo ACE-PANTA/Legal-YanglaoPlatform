@@ -10,7 +10,7 @@
       <el-input v-model="searchValue" size="large" :placeholder="'请输入' + searchLabel"
         style="max-width:250px; margin-right:10px;" />
       <el-button size="large" type="primary" style="margin-right:10px">搜索</el-button>
-      <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button>
+      <!-- <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button> -->
       <el-button size="large" type="primary" @click="exportData">导出</el-button>
     </div>
 

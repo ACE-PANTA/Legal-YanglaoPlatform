@@ -111,22 +111,13 @@ export function UpdateStaffPassword(data: any) {
         data: data
     })
 }
-//删除职工
-export function DeleteStaff(uid: string) {
-    return request({
-        url: baseUrl + '/Staff/DeleteStaff',//连接
-        method: 'get',//请求方法
-        params: {
-            id: uid
-        }
-    })
-}
 
 //获取职工列表
-export function GetStaffList() {
+export function GetStaffList(data:object) {
     return request({
         url: baseUrl + '/Staff/GetStaffList',//连接
-        method: 'get',//请求方法
+        method: 'post',//请求方法
+        data
     })
 }
 

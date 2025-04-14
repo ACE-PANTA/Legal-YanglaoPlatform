@@ -1,5 +1,13 @@
 import request from '@/utils/request';
 import baseUrl from "@/utils/baseUrl"
+
+export function getFamilyDetail(data: any) {
+    return request({
+        url: baseUrl + '/Family/GetOneFamilyWithUid',//连接
+        method: 'get',//请求方法
+        params:{familyuid:data}
+    })
+}
 //添加基本情况
 export function AddBaseInfo(data: any) {
     return request({
@@ -12,10 +20,10 @@ export function AddBaseInfo(data: any) {
 //删除基本情况
 export function DeleteBaseInfo(id: string) {
     return request({
-        url: baseUrl + '/Family/DeleteFamily',//连接
+        url: baseUrl + '/Family/DeleteFamilyInfo',//连接
         method: 'get',//请求方法
         params: {
-            id: id
+            familyUid: id
         }
     })
 }
@@ -23,7 +31,7 @@ export function DeleteBaseInfo(id: string) {
 //修改基本情况
 export function UpdateBaseInfo(data: any) {
     return request({
-        url: baseUrl + '/Family/UpdateFamily',//连接
+        url: baseUrl + '/Family/UpdateFamilyIfno',//连接
         method: 'post',//请求方法
         data: data
     })
@@ -37,7 +45,7 @@ export function GetBaseInfoList(data, userRole) {
             method: 'get',
             data: data
         });
-    } else if (userRole === 'Manager') {
+    } else if (userRole === 'Manager'||'Staff') {
         return request({
             url: baseUrl + '/Family/ManagerGetFamilyFromRegion',
             method: 'post',

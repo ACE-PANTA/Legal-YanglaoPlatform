@@ -1,6 +1,22 @@
 import request from "@/utils/request"
 import baseUrl from "@/utils/baseUrl"
 
+export function UpdateStaff(data: any) {
+    return request({
+        url: baseUrl + '/Staff/UpdateStaff',//连接
+        method: 'post',//请求方法
+        data
+    })
+}
+
+export function DeleteStaff(data: any) {
+    return request({
+        url: baseUrl + '/Staff/DeleteStaff',//连接
+        method: 'get',//请求方法
+        params:{id:data}
+    })
+}
+
 //列表
 export function Register(data: any) {
     return request({

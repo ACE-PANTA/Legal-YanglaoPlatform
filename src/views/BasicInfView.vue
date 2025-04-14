@@ -2,14 +2,21 @@
 import { onBeforeMount, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormRules } from 'element-plus';
 import { jsonp } from 'vue-jsonp';
-import { GetOneFamilyWithUid, GetBaseInfoList, AddBaseInfo, UpdateBaseInfo, DeleteBaseInfo } from '@/api/family';
+import { GetOneFamilyWithUid, GetBaseInfoList, AddBaseInfo, UpdateBaseInfo, DeleteBaseInfo,
+  getFamilyDetail
+ } from '@/api/family';
 import { BasicInfTemplate, EnrollChildGrandRequest, EnrollHouseHoldSpouseRequests } from '@/models';
 import BaseInfoEditDialog from '@/components/BaseInfors/BaseInfoEditDialog.vue';
 import FamilyEditDialog from '@/components/BaseInfors/FamilyEditDialog.vue';
 import ChildGrandInfoDialog from '@/components/BaseInfors/ChildGrandInfoDialog.vue';
 import DetailShowDialog from '@/components/BaseInfors/DetailShowDialog.vue';
+import { useMainStore } from '@/store';
 
 const formData = ref<Array<BasicInfTemplate>>([]);
+
+const localPermission=ref('')
+
+const role=ref('');
 
 const searchLabel = ref('姓名');
 
@@ -57,7 +64,6 @@ const loadCacheData = async () => {
       areaCache.districts = JSON.parse(cachedDistricts);
     }
   } catch (error) {
-    console.error('加载缓存数据失败:', error);
     await getProvinces(); // 如果加载失败，发送请求获取数据
   }
 };
@@ -172,38 +178,108 @@ const itemInfo = ref<BasicInfTemplate>({
   grading: '',
   annualIncome: '',
   annualExpenditure: '',
-  ProvinceId:  '',
-  ProvinceName: '',
-  MunicipalityId:  '',
-  MunicipalityName: '',
-  DistrictId: '',
-  DistrictName: '',
-  TownshipStreetsId: '',
-  TownshipStreetsName:  '',
+  provinceId:  '',
+  provinceName: '',
+  municipalityId:  '',
+  municipalityName: '',
+  districtId: '',
+  districtName: '',
+  townshipStreetsId: '',
+  townshipStreetsName:  '',
   Remark:  '',
   ListEnrollHouseHoldSpouseRequest: [],
   ListEnrollChildGrandRequest: []
 });
 
-const editInfo= ref<BasicInfTemplate>({
+const editInfo= ref<any>({});
+
+const editHostInfo = ref<any>({
+  relation: '户主',
+  name: '',
+  photo: '',
+  identificationNumber: '',
+  householdRegistLocation: '',
+  gender: '',
+  birthDate: '',
+  ethnicity: '',
+  region: '',
+  politicalAffiliation: '',
+  maritalStatus: '',
+  educationLevel: '',
+  phoneNumber: '',
+  administrativeDivision: '',
+  employerSchool: '',
+  employmentStatus: '',
+  remark: '',
   grading: '',
-  annualIncome: '',
-  annualExpenditure: '',
-  ProvinceId:  '',
-  ProvinceName: '',
-  MunicipalityId:  '',
-  MunicipalityName: '',
-  DistrictId: '',
-  DistrictName: '',
-  TownshipStreetsId: '',
-  TownshipStreetsName:  '',
-  Remark:  '',
-  ListEnrollHouseHoldSpouseRequest: [],
-  ListEnrollChildGrandRequest: []
+  healthInformationRequest: {
+    bloodType: '',
+    limbMobility: '',
+    limbDisability: '',
+    medicalHistory: '',
+    recordDisease: '',
+    isLongTermMedication: '',
+    majorDiseases: '',
+    healthStatus: '',
+    disabilityLevel: '无',
+    disabilityType: '',
+    remark: ''
+  },
+  socialSecurityRequest: {
+    medicalInsurance: '',
+    pensionInsurance: '',
+    housingFund: '',
+    lowIncomeSupport: '',
+    insurance: '',
+    fiveGuaranteesSupport: '',
+    otherBenefits: '',
+    employmentSupport: ''
+  }
 });
 
-const editHostInfo=ref<EnrollHouseHoldSpouseRequests>();
-const editSpouseInfo=ref<EnrollHouseHoldSpouseRequests>();
+const editSpouseInfo = ref<any>({
+  relation: '配偶',
+  name: '',
+  photo: '',
+  identificationNumber: '',
+  householdRegistLocation: '',
+  gender: '',
+  birthDate: '',
+  ethnicity: '',
+  region: '',
+  politicalAffiliation: '',
+  maritalStatus: '',
+  educationLevel: '',
+  phoneNumber: '',
+  administrativeDivision: '',
+  employerSchool: '',
+  employmentStatus: '',
+  remark: '',
+  grading: '',
+  healthInformationRequest: {
+    bloodType: '',
+    limbMobility: '',
+    limbDisability: '',
+    medicalHistory: '',
+    recordDisease: '',
+    isLongTermMedication: '',
+    majorDiseases: '',
+    healthStatus: '',
+    disabilityLevel: '无',
+    disabilityType: '',
+    remark: ''
+  },
+  socialSecurityRequest: {
+    medicalInsurance: '',
+    pensionInsurance: '',
+    housingFund: '',
+    lowIncomeSupport: '',
+    insurance: '',
+    fiveGuaranteesSupport: '',
+    otherBenefits: '',
+    employmentSupport: ''
+  }
+});
 
 const detailInfo=new Object({});
 
@@ -295,12 +371,73 @@ const add = async () => {
   
 };
 
+const confirmEdit = async () => {
+  let sendInfo;
+  sendInfo=editInfo.value
+  sendInfo.ListEnrollHouseHoldSpouseRequest=null
+  editHostInfo.value.UpdateHealthInformationRequest=editHostInfo.value.healthInformationRequest
+  editHostInfo.value.healthInformationRequest=null
+  editHostInfo.value.UpdateSocialSecurityRequest=editHostInfo.value.socialSecurityRequest
+  editHostInfo.value.socialSecurityRequest=null
+  sendInfo.ListUpdateHouseHoldSpouseRequest=[]
+  sendInfo.ListUpdateHouseHoldSpouseRequest.push(editHostInfo.value);
+  if(editSpouseInfo.value.name !== '') {
+    editSpouseInfo.value.UpdateHealthInformationRequest=editSpouseInfo.value.healthInformationRequest
+    editSpouseInfo.value.healthInformationRequest=null
+    editSpouseInfo.value.UpdateSocialSecurityRequest=editSpouseInfo.value.socialSecurityRequest
+    editSpouseInfo.value.socialSecurityRequest=null
+    sendInfo.ListUpdateHouseHoldSpouseRequest.push(editSpouseInfo.value);
+  }
+  sendInfo.ListUpdateChildGrandRequest=editInfo.value.listChildGrand;
+  UpdateBaseInfo(sendInfo).then((res) => {
+    if (res.status === 200) {
+      ElMessage.success('添加成功');
+      dialogAddVisible.value = false;
+      activeTab.value='baseInfo';
+      getBaseInfoList();
+    }
+  }).catch((err => {
+    if(err.status==400)
+    {
+      console.error(err);
+      ElMessage.error('字段填写不全，请仔细检查！');
+    }
+    else if(err.response)
+    {
+      ElMessage.error(err.response.data.msg)
+    }
+    
+  }));
+  
+  
+};
+
 
 
 // 打开编辑对话框
-const openEditDialog = (row: BasicInfTemplate) => {
-
-  Object.assign(itemInfo.value, row);
+const openEditDialog = (row: any) => {
+  getFamilyDetail(row.uid)
+  .then(res=>{
+    if(res.status==200)
+    {
+      editInfo.value=res.data.data
+      
+      editInfo.value.listHouseHoldSpouse.forEach(element => {
+        if(element.relation=='户主')
+        {
+          Object.assign(editHostInfo.value,element)
+          Object.assign(editHostInfo.value.healthInformationRequest,element.healthInformation)
+          Object.assign(editHostInfo.value.socialSecurityRequest,element.socialSecurityInformation)
+        }
+        else if(element.relation=='配偶')
+        {
+          Object.assign(editSpouseInfo.value,element)
+          Object.assign(editSpouseInfo.value.healthInformationRequest,element.healthInformation)
+          Object.assign(editSpouseInfo.value.socialSecurityRequest,element.socialSecurityInformation)
+        }
+      });
+    }
+  })
   dialogEditVisible.value = true;
 };
 
@@ -327,7 +464,6 @@ const openDetailDialog = async (row: BasicInfTemplate) => {
     const res = await GetOneFamilyWithUid(row.uid); // 调用接口获取详情数据
     if (res.status === 200) {
       Object.assign(detailInfo, res.data.data); // 将接口返回的数据赋值到 itemInfo
-      console.log(detailInfo);
       
       dialogDetailVisible.value = true; // 打开详情对话框
     } else {
@@ -335,15 +471,13 @@ const openDetailDialog = async (row: BasicInfTemplate) => {
     }
   } catch (error) {
     ElMessage.error('获取详情失败');
-    console.error(error);
   }
 };
 
 // 删除记录
 const deleteRecord = (row: any) => {
-  console.log(row);
   ElMessageBox.confirm(
-    '此操作将永久删除该记录, 是否继续?',
+    '确定进行信息删除操作？',
     '提示',
     {
       confirmButtonText: '确定',
@@ -357,13 +491,22 @@ const deleteRecord = (row: any) => {
         getBaseInfoList();
       }
     })
+    .catch(res=>{
+      if(res.status==403)
+      {
+        ElMessage.error('权限错误')
+      }
+      else
+      {
+        ElMessage.error('操作失败，请检查网络状态')
+      }
+    })
   })
 
 };
 
 onBeforeMount(() => {
   initItemInfo();
-  console.log(itemInfo);
 })
 
 onMounted(async () => {
@@ -375,6 +518,8 @@ onMounted(async () => {
     TownshipStreetsId: ''
   }; 
   getBaseInfoList();
+  role.value=localStorage.getItem('UserRole');
+  localPermission.value=useMainStore().userInfo.havePermissionLevel.toString()
 });
 
 const imageUrl = ref(null);
@@ -402,6 +547,11 @@ const tempChildInfo = ref<EnrollChildGrandRequest>({
 // 添加子女信息的方法
 const addChild = () => {
   childDialogVisible.value = true
+}
+const childEditDialogVisible=ref(false)
+const addEditChild= () => {
+  isChildEdit.value=false
+  childEditDialogVisible.value = true
 }
 
 // 保存子女信息的方法
@@ -432,9 +582,57 @@ const saveChildInfo = () => {
   childDialogVisible.value = false
 }
 
+const saveEditChildInfo = () => {
+  // 深拷贝当前临时数据
+  const newChild = JSON.parse(JSON.stringify(tempChildInfo.value))
+  
+  if(isChildEdit.value)
+  {
+    editInfo.value.listChildGrand[selectedChildIndex.value]=newChild
+  }
+  else{
+    editInfo.value.listChildGrand.push(newChild)
+  }
+  
+
+  tempChildInfo.value = {
+    name:'',
+    relation:'',
+    ifAdopt:'',
+    gender:'',
+    birthDate:'',
+    healthStatus:'',
+    takecareLifeAbility:'',
+    ifLivingAlone:'',
+    disabilityType:'',
+    disabilityLevel:'',
+    medicalDependence:'',
+    ifChronicDisease:'',
+    chronicDiseaseName:'',
+    commonlyMedications:'',
+    grading:'',
+    remark:''
+  }
+  isChildEdit.value=false
+  childEditDialogVisible.value = false
+}
+
 // 删除子女信息
 const removeChild = (index: number) => {
   itemInfo.value.ListEnrollChildGrandRequest.splice(index, 1)
+}
+
+const removeEditChild = (index: number) => {
+  editInfo.value.listChildGrand.splice(index, 1)
+}
+
+const isChildEdit=ref(false)
+const selectedChildIndex=ref(0)
+const editChildInfo=(child:any,index:number)=>{
+  tempChildInfo.value=child
+  selectedChildIndex.value=index
+  isChildEdit.value=true
+  childEditDialogVisible.value=true
 }
 
 
@@ -454,7 +652,7 @@ const hostInfo = ref<EnrollHouseHoldSpouseRequests>({
   educationLevel:'',
   phoneNumber:'',
   administrativeDivision:'',
-  employSchool:'',
+  employerSchool:'',
   employmentStatus:'',
   remark:'',
   grading:'',
@@ -465,7 +663,7 @@ const hostInfo = ref<EnrollHouseHoldSpouseRequests>({
     medicalHistory:'',
     recordDisease:'',
     isLongTermMedication:'',
-    majorDisease:'',
+    majorDiseases:'',
     healthStatus:'',
     disabilityLevel:'无',
     disabilityType:'',
@@ -499,7 +697,7 @@ const houseHoldInfo = ref<EnrollHouseHoldSpouseRequests>({
   educationLevel:'',
   phoneNumber:'',
   administrativeDivision:'',
-  employSchool:'',
+  employerSchool:'',
   employmentStatus:'',
   remark:'',
   grading:'',
@@ -510,7 +708,7 @@ const houseHoldInfo = ref<EnrollHouseHoldSpouseRequests>({
     medicalHistory:'',
     recordDisease:'',
     isLongTermMedication:'',
-    majorDisease:'',
+    majorDiseases:'',
     healthStatus:'',
     disabilityLevel:'无',
     disabilityType:'',
@@ -530,14 +728,25 @@ const houseHoldInfo = ref<EnrollHouseHoldSpouseRequests>({
 });
 
 const activeTab = ref('baseInfo');
+
+const handlePageSizeChange = (size: number) => {
+  getForm.pageSize = size;
+  getBaseInfoList();
+};
+
+const handlePageNumberChange = (page: number) => {
+  getForm.pagenumber = page;
+  getBaseInfoList();
+};
 </script>
 
 <template>
-  <div>
+  <div style="height: 80vh;">
     <h1>基本情况登记</h1>
 
     <!-- 搜索功能区域 -->
-    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 25px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 25px; flex-wrap: wrap;"
+    v-if="role!='SuperAdmin'">
       <el-select v-model="searchLabel" placeholder="选择搜索类型" style="width: 8vw;">
         <el-option label="姓名" value="姓名" />
         <el-option label="身份证" value="身份证" />
@@ -565,13 +774,18 @@ const activeTab = ref('baseInfo');
     </div>
 
     <!-- 表格 -->
-    <el-table :data="formData" stripe size="large" style="width:100%;">
+    <el-table :data="formData" stripe size="large" style="width:100%;height: 80%;">
       <!-- 基本信息列 -->
-      <el-table-column prop="listHouseHoldSpouse[0].name" label="户主姓名" show-overflow-tooltip />
-      <el-table-column prop="listHouseHoldSpouse[0].identificationNumber" label="户主身份证号" show-overflow-tooltip />
+      <el-table-column prop="listHouseHoldSpouse[0].name" width="130"  label="户主姓名" show-overflow-tooltip />
+      <el-table-column prop="listHouseHoldSpouse[0].identificationNumber" width="220" label="户主身份证号" show-overflow-tooltip />
+      <el-table-column label="家庭所在地" width="230" show-overflow-tooltip>
+        <template #default="{row}">
+          {{ row.provinceName }}{{ row.municipalityName }}{{ row.districtName }}{{ row.townshipStreetsName }}
+        </template>
+      </el-table-column>
       <el-table-column prop="annualIncome" label="家庭年收入(元)" show-overflow-tooltip />
       <el-table-column prop="annualExpenditure" label="家庭年支出(元)" show-overflow-tooltip />
-      <el-table-column label="操作" fixed="right" width="280">
+      <el-table-column label="操作" fixed="right" width="250">
         <template #default="{ row }">
           <div style="display: flex; justify-content: center;">
             <el-button type="info" size="medium" style="margin:0 5px;" @click="openDetailDialog(row)">
@@ -580,13 +794,13 @@ const activeTab = ref('baseInfo');
               </el-icon>
               详情
             </el-button>
-            <el-button type="primary" size="medium" style="margin:0 5px;" @click="openEditDialog(row)">
+            <el-button v-if="role=='Staff'" type="primary" size="medium" style="margin:0 5px;" @click="openEditDialog(row)">
               <el-icon>
                 <Edit />
               </el-icon>
               编辑
             </el-button>
-            <el-button type="danger" size="medium" style="margin:0 5px;" @click="deleteRecord(row)">
+            <el-button v-if="localPermission=='4'" type="danger" size="medium" style="margin:0 5px;" @click="deleteRecord(row)">
               <el-icon>
                 <DeleteFilled />
               </el-icon>
@@ -597,6 +811,16 @@ const activeTab = ref('baseInfo');
       </el-table-column>
     </el-table>
 
+    <!-- 分页组件 -->
+    <el-pagination
+      v-model:current-page="getForm.pagenumber"
+      page-size="10"
+      :total="formData.length"
+      layout="prev, pager, next, jumper"
+      @size-change="handlePageSizeChange"
+      @current-change="handlePageNumberChange"
+    />
+
     <!-- 详细信息对话框 -->
     <el-dialog v-model="dialogDetailVisible" width="700px" class="custom-dialog" :modal="true">
       <template #default>
@@ -606,7 +830,7 @@ const activeTab = ref('baseInfo');
     </el-dialog>
 
     <!-- 编辑对话框 -->
-    <el-dialog v-model="dialogEditVisible" width="700px" class="custom-dialog" :modal="true">
+    <el-dialog v-model="dialogEditVisible" width="50%" class="custom-dialog" :modal="true">
       <template #default>
         <div class="dialog-scroll-container">
           <el-tabs class="custom-tabs" v-model="activeTab">
@@ -632,7 +856,7 @@ const activeTab = ref('baseInfo');
                 <span class="tabs-label">子女信息</span>
               </template>
               <div class="child-info-container">
-                <el-card v-for="(child, index) in editInfo.ListEnrollChildGrandRequest" 
+                <el-card v-for="(child, index) in editInfo.listChildGrand" 
                         :key="index" 
                         class="child-card">
                   <div class="child-card-content">
@@ -642,10 +866,16 @@ const activeTab = ref('baseInfo');
                       <span>出生日期: {{ child.birthDate }}</span>
                     </div>
                     <div class="child-actions">
+                      <el-button type="primary" 
+                          size="small" 
+                          circle
+                          @click="editChildInfo(child,index)">
+                        <el-icon><EditPen /></el-icon>
+                      </el-button>
                       <el-button type="danger" 
-                                size="small" 
-                                circle
-                                @click="removeChild(index)">
+                          size="small" 
+                          circle
+                          @click="removeEditChild(index)">
                         <el-icon><Delete /></el-icon>
                       </el-button>
                     </div>
@@ -655,15 +885,15 @@ const activeTab = ref('baseInfo');
                 <!-- 添加子女按钮 -->
                 <el-button type="primary" 
                           style="margin-top: 20px;"
-                          @click="addChild">
+                          @click="addEditChild">
                   添加子女信息
                 </el-button>
               </div>
             </el-tab-pane>
 
             <!-- 添加子女信息对话框 -->
-            <el-dialog v-model="childDialogVisible" 
-                      title="添加子女信息" 
+            <el-dialog v-model="childEditDialogVisible" 
+                      title="子女信息" 
                       width="50%" 
                       :modal="true">
               <ChildGrandInfoDialog
@@ -672,8 +902,8 @@ const activeTab = ref('baseInfo');
               </ChildGrandInfoDialog>
               <template #footer>
                 <div class="dialog-footer">
-                  <el-button @click="childDialogVisible = false">取消</el-button>
-                  <el-button type="primary" @click="saveChildInfo">确定</el-button>
+                  <el-button @click="childEditDialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="saveEditChildInfo">确定</el-button>
                 </div>
               </template>
             </el-dialog>
@@ -703,7 +933,7 @@ const activeTab = ref('baseInfo');
           </div>
           <div v-else-if="activeTab =='familyInfo'">
             <el-button @click="activeTab='childInfo'">上一页</el-button>
-            <el-button type="primary" @click="add()">确定</el-button>
+            <el-button type="primary" @click="confirmEdit()">确定</el-button>
           </div>
           
         </div>

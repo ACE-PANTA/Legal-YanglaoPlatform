@@ -87,17 +87,21 @@
       <el-input v-model="memberInfo.commonlyMedications" />
     </el-form-item>
     <el-form-item label="等级划分" prop="grading">
-      <el-select v-model="memberInfo.grading" placeholder="请选择等级">
-        <el-option label="红" value="红" />
-        <el-option label="橙" value="橙" />
-        <el-option label="黄" value="黄" />
-        <el-option label="绿" value="绿" />
-      </el-select>
+        <el-select v-model="memberInfo.grading" disabled placeholder="请进行评级判定">
+            <el-option label="红" value="红" />
+            <el-option label="橙" value="橙" />
+            <el-option label="黄" value="黄" />
+            <el-option label="绿" value="绿" />
+        </el-select>
+        <el-button type="success" style="margin-top: 5px;" @click="openGradeDialog">进行评级判断</el-button>
     </el-form-item>
     <el-form-item label="备注" prop="remark">
       <el-input v-model="memberInfo.remark" />
     </el-form-item>
   </el-form>
+  <el-dialog v-model="isGradeDialogVisible" width="50%" :destroy-on-close="true">
+      <GradeJudge @gradeEvaluated="updateGrading" />
+  </el-dialog>
 </template>
 
 <script lang="ts">
@@ -108,11 +112,24 @@ export default {
 
 <script setup lang="ts">
 import { ref, defineProps, PropType } from 'vue';
-import type { EnrollChildGrandRequests } from '@/models';
+import type { EnrollChildGrandRequest } from '@/models';
+import GradeJudge from '@/components/BaseInfors/GradeJudge.vue';
+
+const isGradeDialogVisible = ref(false);
+
+const updateGrading = (grade: string) => {
+    props.memberInfo.grading = grade;
+    setTimeout(()=>{isGradeDialogVisible.value = false;},1000)
+    
+};
+
+const openGradeDialog = () => {
+    isGradeDialogVisible.value = true;
+};
 
 const props = defineProps({
   memberInfo: {
-    type: Object as PropType<EnrollChildGrandRequests>,
+    type: Object as PropType<EnrollChildGrandRequest>,
     required: true
   },
   disabled: {

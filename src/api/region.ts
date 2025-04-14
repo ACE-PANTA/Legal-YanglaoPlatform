@@ -9,9 +9,96 @@ interface RegionPermission {
     TownshipStreets: number
 }
 
+export const denyRegionDelete = (data: Object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/RejectDeleteTownshipPermission',
+        method: 'post',
+        data
+        
+    })
+}
+
+export const confirmRegionDelete = (data: Object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/ApproveDeleteTownshipPermission',
+        method: 'post',
+        data
+        
+    })
+}
+
+export const getCheckedPermission = (data: Object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/GetPermissionReportAudited',
+        method: 'get',
+        data
+        
+    })
+}
+
+export const getPermissionToBeDeleted = (data: Object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/GetPermissionToBeDeleted',
+        method: 'get',
+        data
+        
+    })
+}
+
+export const staffTryToDeleteStreetRegion = (data: Object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/RequestDeleteTownshipPermission',
+        method: 'post',
+        data
+        
+    })
+}
+
+export const managerDeleteStreetsRegion = (data: any) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/DeleteDistrictPermission',
+        method: 'get',
+        params:{permissionUid:data}
+        
+    })
+}
+
+export const superadminDeleteRegion = (data: any) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/DeleteProvinceOrMunicipalityPermission',
+        method: 'get',
+        params:{permissionUid:data}
+        
+    })
+}
+
+export const getRegionTree = (data: object) =>{
+    return request({
+        url: baseUrl+'/StaffPermissions/GetPermissionTree',
+        method: 'get',
+        data
+    })
+}
+
 export const setStaffRegion = (data: object) => {
     return request({
         url: baseUrl+'/StaffPermissions/StaffRegionPermission',
+        method: 'post',
+        data
+    })
+}
+
+export const setStaffRegionByManager = (data: object) => {
+    return request({
+        url: baseUrl+'/StaffPermissions/ManagerSetPermission',
+        method: 'post',
+        data
+    })
+}
+
+export const setStaffRegionByStaff = (data: object) => {
+    return request({
+        url: baseUrl+'/StaffPermissions/StaffSetPermission',
         method: 'post',
         data
     })
@@ -44,13 +131,5 @@ export const getStaffRegionList = (staffUid: string) => {
         url: baseUrl + '/StaffPermissions/GetStaffPermission',
         method: 'get',
         params: { uid:staffUid }
-    })
-}
-
-export const deleteStaffRegion = (uid: string) => {
-    return request({
-        url: baseUrl + '/StaffPermissions/DeleteStaffPermission',
-        method: 'get',
-        params: { uid }
     })
 }

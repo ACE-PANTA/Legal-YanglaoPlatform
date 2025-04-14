@@ -8,7 +8,7 @@
             <el-form :model="child" label-width="120px" label-position="left">
                 <el-form-item label="姓名">{{ child.name }}</el-form-item>
                 <el-form-item label="关系">{{ child.relation }}</el-form-item>
-                <el-form-item label="是否为收养">{{ child.relation }}</el-form-item>
+                <el-form-item label="是否为收养">{{ child.ifAdopt }}</el-form-item>
                 <el-form-item label="性别">{{ child.gender }}</el-form-item>
                 <el-form-item label="出生日期">{{ child.birthDate }}</el-form-item>
                 <el-form-item label="健康状况">{{ child.healthStatus }}</el-form-item>

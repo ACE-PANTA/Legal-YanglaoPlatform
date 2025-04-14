@@ -6,8 +6,27 @@ import { Register} from '@/api/staff'
 import { setStaffRegion } from '@/api/region'
 import Dentify from '@/components/Dentify.vue'
 import { useRouter } from 'vue-router'
+import { jsonp } from 'vue-jsonp'
 
 const router = useRouter()
+
+const saveCacheData = () => {
+  try {
+    localStorage.setItem(CACHE_KEY.PROVINCES, JSON.stringify(areaCache.provinces))
+    localStorage.setItem(CACHE_KEY.CITIES, JSON.stringify(areaCache.cities))
+    localStorage.setItem(CACHE_KEY.DISTRICTS, JSON.stringify(areaCache.districts))
+  } catch (error) {
+    console.error('保存缓存数据失败:', error)
+  }
+}
+
+interface DistrictItem {
+  id: string
+  fullname: string
+  name: string
+  type?: number
+  children?: DistrictItem[]
+}
 
 enum E_Role
 {
@@ -42,11 +61,14 @@ interface RegisterForm {
     phone: string,
     vcode: string,
     role: E_Role,
-    province: number,
-    municipality: number,
-    district: number,
-    townshipStreets: number,
-    region: number[]
+    ProvinceId: string,
+    ProvinceName: string
+    MunicipalityId: string,
+    MunicipalityName: string
+    DistrictId: string,
+    DistrictName: string
+    TownshipStreetsId: string,
+    TownshipStreetsName: string
 }
 
 const getRandomDigit = () => {
@@ -74,11 +96,14 @@ const registerForm = reactive<RegisterForm>({
     phone: '',
     vcode: '',
     role: E_Role.Staff,
-    province: 0,
-    municipality: 0,
-    district: 0,
-    townshipStreets: 0,
-    region: []
+    ProvinceId: '',
+    ProvinceName: '',
+    MunicipalityId: '',
+    MunicipalityName: '',
+    DistrictId: '',
+    DistrictName: '',
+    TownshipStreetsId: '',
+    TownshipStreetsName: '',
 })
 
 const registerFormRef = ref<FormInstance>()
@@ -125,7 +150,9 @@ const rules = reactive<FormRules<RegisterForm>>({
     phone: [
         { required: true, message: '手机号不能为空！', trigger: 'blur' },
         { pattern: /^\d{11}$/, message: '手机号必须为11位数字', trigger: 'blur' }
-    ]
+    ],
+    ProvinceId:[{required:true,message:'省级单位不可为空'}],
+    DistrictId:[{required:true,message:'区县单位不可为空'}],
 })
 
 // 添加区域数据相关的响应式变量
@@ -159,6 +186,14 @@ const register = debounce(async (formEl: FormInstance | undefined) => {
                 IdentificationNumber: registerForm.identificationNumber,
                 Gender: registerForm.gender,
                 Phone: registerForm.phone,
+                ProvinceId: registerForm.ProvinceId,
+                ProvinceName: registerForm.ProvinceName,
+                MunicipalityId: registerForm.MunicipalityId||'88888888',
+                MunicipalityName: registerForm.MunicipalityName||'全部',
+                DistrictId: registerForm.DistrictId,
+                DistrictName: registerForm.DistrictName,
+                TownshipStreetsId: registerForm.TownshipStreetsId,
+                TownshipStreetsName: registerForm.TownshipStreetsName,
             }
             console.log(data);
             Register(data).then(res => {
@@ -171,6 +206,7 @@ const register = debounce(async (formEl: FormInstance | undefined) => {
                 }
             }).catch(err => {
                 console.log(err)
+                ElMessage.error(err.response.data.message)
             })
         } else {
             console.log('error submit!', fields)
@@ -178,8 +214,191 @@ const register = debounce(async (formEl: FormInstance | undefined) => {
     })
 }, 1000)  // 设置1秒的防抖延迟
 
-onMounted(() => {
+// 区域数据相关
+
+const CACHE_KEY = {
+  PROVINCES: 'area_provinces',
+  CITIES: 'area_cities',
+  DISTRICTS: 'area_districts'
+}
+interface AreaCache {
+  [key: string]: DistrictItem[]
+}
+
+const provinces = ref<DistrictItem[]>([])
+const cities = ref<DistrictItem[]>([])
+const districts = ref<DistrictItem[]>([])
+const streets = ref<DistrictItem[]>([])
+const areaCache = reactive<AreaCache>({
+    provinces: [],
+    cities: [],
+    districts: [],
+    streets: []
+})
+
+
+// 添加默认选项到列表
+const addDefaultOption = (list: DistrictItem[]) => [ ...list]
+
+// 加载缓存数据
+const loadCacheData = () => {
+    try {
+        const cachedProvinces = localStorage.getItem(CACHE_KEY.PROVINCES)
+        const cachedCities = localStorage.getItem(CACHE_KEY.CITIES)
+        const cachedDistricts = localStorage.getItem(CACHE_KEY.DISTRICTS)
+
+        if (cachedProvinces) {
+            areaCache.provinces = JSON.parse(cachedProvinces)
+            provinces.value = areaCache.provinces
+        }
+        if (cachedCities) {
+            areaCache.cities = JSON.parse(cachedCities)
+        }
+        if (cachedDistricts) {
+            areaCache.districts = JSON.parse(cachedDistricts)
+        }
+    } catch (error) {
+        console.error('加载缓存数据失败:', error)
+    }
+}
+
+// 获取省份数据
+const getProvinces = async () => {
+    try {
+        if (areaCache.provinces.length > 0) {
+            provinces.value = addDefaultOption(areaCache.provinces)
+            return
+        }
+        const res = await jsonp('https://apis.map.qq.com/ws/district/v1/list', {
+            key: 'LXLBZ-HP66Q-PYL5K-B74JY-IFTMK-RYFV2',
+            output: 'jsonp'
+        })
+        if (res.status === 0) {
+            areaCache.provinces = res.result[0]
+            provinces.value = addDefaultOption(areaCache.provinces)
+            saveCacheData()
+        }
+    } catch (error) {
+        console.error('获取省份数据失败:', error)
+        ElMessage.error('获取省份数据失败')
+    }
+}
+
+// 获取下级行政区数据
+const getChildren = async (id: string, level: number) => {
+    try {
+        if (level === 1 && areaCache.cities[id]) {
+            cities.value = addDefaultOption(areaCache.cities[id])
+            return
+        }
+        if (level === 2 && areaCache.districts[id]) {
+            districts.value = addDefaultOption(areaCache.districts[id])
+            return
+        }
+        if (level === 3 && areaCache.streets[id]) {
+            streets.value = addDefaultOption(areaCache.streets[id])
+            return
+        }
+
+        const res = await jsonp('https://apis.map.qq.com/ws/district/v1/getchildren', {
+            key: 'LXLBZ-HP66Q-PYL5K-B74JY-IFTMK-RYFV2',
+            id: id,
+            output: 'jsonp'
+        })
+
+        if (res.status === 0) {
+            if (level === 1) {
+                areaCache.cities[id] = res.result[0]
+                cities.value = addDefaultOption(areaCache.cities[id])
+                districts.value = addDefaultOption([])
+            } else if (level === 2) {
+                areaCache.districts[id] = res.result[0]
+                districts.value = addDefaultOption(areaCache.districts[id])
+                streets.value = addDefaultOption([])
+            } else if (level === 3) {
+                areaCache.streets[id] = res.result[0]
+                streets.value = addDefaultOption(areaCache.streets[id])
+            }
+            saveCacheData()
+        }
+    } catch (error) {
+        console.error('获取下级行政区失败:', error)
+        ElMessage.error('获取下级行政区失败')
+    }
+}
+
+// 添加直辖市判断
+const MUNICIPALITIES = ['110000', '120000', '310000', '500000'] // 北京、天津、上海、重庆
+
+// 处理省份选择
+const handleProvinceChange = async (value: string) => {
+    const selectedProvince = provinces.value.find(p => p.id === value);
+    registerForm.ProvinceId = value;
+    registerForm.ProvinceName = selectedProvince ? selectedProvince.fullname : ''; // 更新省份名称
+    registerForm.MunicipalityId = '';
+    registerForm.MunicipalityName = '';
+    registerForm.DistrictId = '';
+    registerForm.DistrictName = '';
+    registerForm.TownshipStreetsId = '';
+    registerForm.TownshipStreetsName = '';
+    if (value) {
+        if (MUNICIPALITIES.includes(value)) {
+            await getChildren(value, 2); // 直辖市直接加载区县
+            cities.value = addDefaultOption([]); // 清空城市选择
+        } else {
+            await getChildren(value, 1);
+        }
+    } else {
+        cities.value = addDefaultOption([]);
+        districts.value = addDefaultOption([]);
+        streets.value = addDefaultOption([]);
+    }
+}
+
+// 处理城市选择
+const handleCityChange = async (value: string) => {
+    const selectedCity = cities.value.find(c => c.id === value); 
+    registerForm.MunicipalityId = value;
+    registerForm.MunicipalityName = selectedCity ? selectedCity.fullname : ''; // 更新城市名称
+    registerForm.DistrictId = '';
+    registerForm.DistrictName = '';
+    registerForm.TownshipStreetsId = '';
+    registerForm.TownshipStreetsName = '';
+    if (value) {
+        await getChildren(value, 2);
+    } else {
+        districts.value = addDefaultOption([]);
+        streets.value = addDefaultOption([]);
+    }
+}
+
+// 处理区县选择
+const handleDistrictChange = async (value: string) => {
+    const selectedDistrict = districts.value.find(d => d.id === value);
+    registerForm.DistrictId = value;
+    registerForm.DistrictName = selectedDistrict ? selectedDistrict.fullname : ''; // 更新区县名称
+    registerForm.TownshipStreetsId = '';
+    registerForm.TownshipStreetsName = '';
+    if (value) {
+        await getChildren(value, 3);
+    } else {
+        streets.value = addDefaultOption([]);
+    }
+}
+
+// 处理街道选择
+const handleStreetChange = (value: string) => {
+    const selectedStreet = streets.value.find(s => s.id === value);
+    registerForm.TownshipStreetsId = value;
+    registerForm.TownshipStreetsName = selectedStreet ? selectedStreet.fullname : ''; // 更新街道名称
+}
+
+onMounted(async () => {
     getvCode()
+    loadCacheData()
+    if (!areaCache.provinces.length) {
+        await getProvinces()
+    }
 })
 </script>
 
@@ -187,8 +406,8 @@ onMounted(() => {
     <el-container id="loginPage">
         <el-header style="background-color: rgba(250,250,250,0.6);">
             <div id="topTitle">
-                <el-icon><svg t="1742307418721" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4794" width="200" height="200"><path d="M644.949333 192.056889V161.564444a13.084444 13.084444 0 0 0-12.970666-13.255111H371.712a13.084444 13.084444 0 0 0-12.970667 13.255111v714.126223h37.546667V219.591111c0-15.189333 12.401778-27.534222 27.591111-27.534222h221.070222z m8.533334 257.422222c-133.12 25.144889-233.301333 135.395556-233.301334 267.662222 0 59.164444 20.024889 113.834667 54.044445 158.549334h4.323555c6.599111 0 12.003556 7.566222 12.003556 16.896v0.682666c0 9.329778-5.347556 16.952889-11.946667 16.952889H125.724444C119.125333 910.222222 113.777778 902.599111 113.777778 893.269333v-0.739555c0-9.329778 5.347556-16.952889 12.003555-16.952889h31.516445V373.873778c0-25.941333 21.333333-46.990222 47.502222-46.990222H324.266667V161.564444c0-26.339556 21.333333-47.786667 47.502222-47.786666h260.209778c26.168889 0 47.502222 21.447111 47.502222 47.786666v165.432889h119.466667c26.168889 0 47.502222 21.048889 47.502222 46.990223v103.651555a17.351111 17.351111 0 0 1-17.294222 17.237333 17.351111 17.351111 0 0 1-17.294223-17.237333V373.873778a12.743111 12.743111 0 0 0-12.913777-12.458667h-38.001778v84.195556a373.134222 373.134222 0 0 0-52.280889-3.640889c-10.126222 0-20.138667 0.568889-29.980445 1.706666v-3.697777a17.351111 17.351111 0 0 1-25.144888 9.500444zM223.573333 875.064889v-455.68c0-12.344889 10.012444-22.471111 22.471111-22.471111H323.697778v-35.384889H204.8a12.686222 12.686222 0 0 0-12.913778 12.458667v501.077333h31.687111zM682.666667 514.958222a194.389333 194.389333 0 1 1 0 388.721778 194.389333 194.389333 0 0 1 0-388.721778z m-152.348445 128.568889c-4.209778 3.584-10.865778 14.392889-5.006222 29.980445 5.973333 15.644444 28.216889 5.461333 28.216889 5.461333l88.177778-37.376c2.218667-1.308444 4.608-1.934222 6.826666-2.503111 6.314667-1.706667 8.760889-0.568889 19.114667 3.185778 10.353778 3.811556 32.938667 12.970667 38.172444 15.132444 1.820444 0.682667 2.844444 2.048 3.584 3.527111a9.386667 9.386667 0 0 1-7.509333 13.084445c-2.616889 0.284444-4.778667 0-4.778667 0l-49.322666-7.850667c-5.973333-0.853333-9.955556 7.623111-9.955556 7.623111a4.096 4.096 0 0 0-0.568889 1.820444c0 4.494222 7.964444 9.102222 7.964445 9.102223l72.704 28.273777s12.8 7.111111 36.693333 7.111112c23.893333 0 69.745778-37.774222 69.745778-37.774223 14.791111-15.416889 12.344889-61.212444 0.398222-69.063111-11.946667-7.907556-45.340444-12.515556-58.595555-13.255111-13.255111-0.568889-34.417778-6.883556-61.269334-15.075555-26.908444-8.248889-57.002667-7.623111-70.087111 0-14.506667 8.419556-100.295111 54.897778-104.504889 58.595555z m296.96 134.712889c4.266667-3.640889 10.922667-14.449778 5.006222-30.094222-5.916444-15.587556-28.216889-5.404444-28.216888-5.404445l-88.120889 37.376c-2.275556 1.308444-4.664889 1.934222-6.883556 2.503111-6.314667 1.706667-8.760889 0.568889-19.114667-3.185777a1590.044444 1590.044444 0 0 1-38.172444-15.132445 6.485333 6.485333 0 0 1-3.527111-3.527111 9.386667 9.386667 0 0 1 7.509333-13.084444 18.204444 18.204444 0 0 1 4.721778 0s42.666667 6.826667 49.322667 7.793777c5.973333 0.910222 9.955556-7.566222 9.955555-7.566222a4.096 4.096 0 0 0 0.568889-1.820444c0-4.494222-7.964444-9.159111-7.964444-9.159111l-72.704-28.273778s-12.743111-7.054222-36.693334-7.054222c-23.893333 0-69.688889 37.774222-69.688889 37.774222-14.791111 15.416889-12.401778 61.212444-0.455111 69.063111 11.946667 7.850667 45.340444 12.515556 58.652445 13.255111 13.198222 0.568889 34.360889 6.883556 61.269333 15.075556 26.851556 8.248889 57.002667 7.623111 70.030222 0 14.506667-8.419556 100.295111-54.897778 104.504889-58.595556z" fill="#000000" p-id="4795"></path></svg></el-icon>
-                竞秀区智慧养老院信息化服务平台
+                <el-icon><img src="/public/logo.jpg" style="width: 130%;aspect-ratio: 1/1;margin-right: 50%;"></el-icon>                
+                计生特殊家庭全方位帮扶云平台
             </div>
         </el-header>
         
@@ -256,6 +475,27 @@ onMounted(() => {
                             <el-radio label="1" :value="E_Role.Staff">工作人员</el-radio>
                             <el-radio label="2" :value="E_Role.Volunteer">志愿者</el-radio>
                         </el-radio-group>
+                    </el-form-item>
+
+                    <el-form-item label="省份" prop="province">
+                        <el-select v-model="registerForm.ProvinceId" placeholder="请选择省份" @change="handleProvinceChange">
+                            <el-option v-for="item in provinces" :key="item.id" :label="item.fullname" :value="item.id" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="城市" prop="municipality" v-if="!MUNICIPALITIES.includes(String(registerForm.ProvinceId))">
+                        <el-select v-model="registerForm.MunicipalityId" placeholder="请选择城市" @change="handleCityChange" :disabled="!registerForm.ProvinceId">
+                            <el-option v-for="item in cities" :key="item.id" :label="item.fullname" :value="item.id" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="区县" prop="district">
+                        <el-select v-model="registerForm.DistrictId" placeholder="请选择区县" @change="handleDistrictChange" :disabled="!registerForm.ProvinceId || (!MUNICIPALITIES.includes(String(registerForm.ProvinceId)) && !registerForm.MunicipalityId)">
+                            <el-option v-for="item in districts" :key="item.id" :label="item.fullname" :value="item.id" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="街道/乡镇" prop="townshipStreets">
+                        <el-select v-model="registerForm.TownshipStreetsId" placeholder="请选择街道/乡镇" @change="handleStreetChange" :disabled="!registerForm.DistrictId">
+                            <el-option v-for="item in streets" :key="item.id" :label="item.fullname" :value="item.id" />
+                        </el-select>
                     </el-form-item>
 
                     <el-form-item prop="vcode" style="margin-bottom: 30px">

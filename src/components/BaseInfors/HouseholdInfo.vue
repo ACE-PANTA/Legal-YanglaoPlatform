@@ -43,13 +43,13 @@
                 社会保障
             </div>
             <el-form-item label="医疗">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="养老">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="住房">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="低保">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="保险">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="五保">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="其他保障">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
-            <el-form-item label="就业扶持">{{ data.socialSecurityInformation.medicalInsurance }}</el-form-item>
+            <el-form-item label="养老">{{ data.socialSecurityInformation.pensionInsurance }}</el-form-item>
+            <el-form-item label="住房">{{ data.socialSecurityInformation.housingFund }}</el-form-item>
+            <el-form-item label="低保">{{ data.socialSecurityInformation.lowIncomeSupport }}</el-form-item>
+            <el-form-item label="保险">{{ data.socialSecurityInformation.insurance }}</el-form-item>
+            <el-form-item label="五保">{{ data.socialSecurityInformation.fiveGuaranteesSupport }}</el-form-item>
+            <el-form-item label="其他保障">{{ data.socialSecurityInformation.otherBenefits }}</el-form-item>
+            <el-form-item label="就业扶持">{{ data.socialSecurityInformation.employmentSupport }}</el-form-item>
         </el-form>
         
     </div>
