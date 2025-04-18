@@ -227,7 +227,7 @@ export function UpdateTask(data: any) {
 //获取任务列表
 export function GetTaskList() {
     return request({
-        url: baseUrl + '/Task/GetMonthlyWorkDetail',//连接
+        url: baseUrl + '/Task/GetFamilyTask',//连接
         method: 'get',//请求方法
     })
 }

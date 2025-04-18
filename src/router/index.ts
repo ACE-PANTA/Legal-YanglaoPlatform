@@ -65,12 +65,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'permission',
         name: 'permission',
         component: () => import('../views/PermissionView.vue'),
-      },
-      {
-        path: 'about',
-        name: 'about',
-        component: () => import('../views/AboutView.vue'),
-      },
+      }
     ]
   },
   {

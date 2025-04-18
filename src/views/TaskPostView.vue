@@ -19,19 +19,17 @@
   <!-- 表格信息 -->
   <div style="display:flex; flex-direction: column;">
     <el-table :data="taskData" size="large" stripe style="width: 100%;">
-      <el-table-column v-for="task in taskLabelList" :key="task.value" :prop="task.value" :label="task.label" show-overflow-tooltip />
-      <el-table-column label="是否过期" prop="isOverdue" show-overflow-tooltip>
+      <el-table-column label="任务名称" prop="taskName" show-overflow-tooltip />
+      <el-table-column label="任务详情" prop="taskDescription" show-overflow-tooltip />
+      <el-table-column label="是否过期" prop="ifCompuete" show-overflow-tooltip>
         <template #default="scope">
-          <span v-if="scope.row.isOverdue" style="color: red;">已过期</span>
+          <span v-if="scope.row.ifCompuete" style="color: red;">已过期</span>
           <span v-else style="color: green;">未过期</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="120">
         <template #default="{ row }">
           <div style="display: flex; width:100%;">
-            <el-button style="margin: auto; margin-left:5px; margin-right:5px" type="primary" circle size="middle" @click="openEditDialog(row)">
-              <el-icon><Edit /></el-icon>
-            </el-button>
             <el-button style="margin: auto;" circle type="danger" size="middle" @click="deleteTask(row)">
               <el-icon><DeleteFilled /></el-icon>
             </el-button>
@@ -41,21 +39,15 @@
     </el-table>
   </div>
 
-  <!-- 编辑对话框 -->
+  <!-- 编辑对话框
   <el-dialog v-model="dialogEditVisible" title="编辑任务信息" width="700">
     <el-form :model="taskForm" ref="taskFormRef" :rules="rules">
-      <el-form-item label="月份" prop="month" :label-width="formLabelWidth" label-position="left">
-        <el-select v-model="taskForm.month" placeholder="请选择月份" style="width: 200px;">
-          <el-option v-for="month in months" :key="month.value" :label="month.label" :value="month.value" />
-        </el-select>
+      <el-form-item label="任务名称" prop="taskName" :label-width="formLabelWidth" label-position="left">
+        <el-input v-model="taskForm.taskName" placeholder="请输入关键任务" type="textarea"></el-input>
       </el-form-item>
 
-      <el-form-item label="关键任务" prop="keyTask" :label-width="formLabelWidth" label-position="left">
-        <el-input v-model="taskForm.keyTask" placeholder="请输入关键任务" type="textarea"></el-input>
-      </el-form-item>
-
-      <el-form-item label="开始时间" prop="startTime" :label-width="formLabelWidth" label-position="left">
-        <el-date-picker v-model="taskForm.startTime" type="datetime" placeholder="请选择开始时间" style="width: 100%" />
+      <el-form-item label="开始时间" prop="starTime" :label-width="formLabelWidth" label-position="left">
+        <el-date-picker v-model="taskForm.starTime" type="datetime" placeholder="请选择开始时间" style="width: 100%" />
       </el-form-item>
 
       <el-form-item label="结束时间" prop="endTime" :label-width="formLabelWidth" label-position="left">
@@ -71,8 +63,8 @@
       </el-form-item>
 
       <el-form-item label="是否过期" prop="isOverdue" :label-width="formLabelWidth" label-position="left">
-        <el-tag v-if="taskForm.isOverdue" type="danger">已过期</el-tag>
-        <el-tag v-else type="success">未过期</el-tag>
+        <el-tag v-if="taskForm.ifCompuete" type="danger">已完成</el-tag>
+        <el-tag v-else type="success">未完成</el-tag>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -82,47 +74,38 @@
       </div>
     </template>
   </el-dialog>
-
+ -->
+  
   <!-- 添加对话框 -->
-  <el-dialog v-model="dialogAddVisible" title="添加任务信息" width="700">
-    <el-form :model="taskForm" ref="taskFormRef" :rules="rules">
-      <el-form-item label="月份" prop="month" :label-width="formLabelWidth" label-position="left">
-        <el-select v-model="taskForm.month" placeholder="请选择月份" style="width: 200px;">
-          <el-option v-for="month in months" :key="month.value" :label="month.label" :value="month.value" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="关键任务" prop="keyTask" :label-width="formLabelWidth" label-position="left">
-        <el-input v-model="taskForm.keyTask" placeholder="请输入关键任务" type="textarea"></el-input>
-      </el-form-item>
-
-      <el-form-item label="开始时间" prop="startTime" :label-width="formLabelWidth" label-position="left">
-        <el-date-picker v-model="taskForm.startTime" type="datetime" placeholder="请选择开始时间" style="width: 100%" />
-      </el-form-item>
-
-      <el-form-item label="结束时间" prop="endTime" :label-width="formLabelWidth" label-position="left">
-        <el-date-picker v-model="taskForm.endTime" type="datetime" placeholder="请选择结束时间" style="width: 100%" />
-      </el-form-item>
-
-      <el-form-item label="KPI" prop="kpi" :label-width="formLabelWidth" label-position="left">
-        <el-input v-model="taskForm.kpi" placeholder="请输入KPI" type="textarea"></el-input>
-      </el-form-item>
-
-      <el-form-item label="负责人" prop="responsiblePerson" :label-width="formLabelWidth" label-position="left">
-        <el-input v-model="taskForm.responsiblePerson" placeholder="请输入负责人姓名" style="width: 200px;"></el-input>
-      </el-form-item>
-
-      <el-form-item label="是否过期" prop="isOverdue" :label-width="formLabelWidth" label-position="left">
-        <el-tag v-if="taskForm.isOverdue" type="danger">已过期</el-tag>
-        <el-tag v-else type="success">未过期</el-tag>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="dialogAddVisible = false">取消</el-button>
-        <el-button type="primary" @click="addTask">确定</el-button>
-      </div>
-    </template>
+  <el-dialog v-model="dialogAddVisible" title="添加任务信息" width="800">
+    <el-steps :active="activeStep" align-center finish-status="success" style="margin-bottom: 20px;">
+      <el-step title="选择工作人员"></el-step>
+      <el-step title="指定探访家庭"></el-step>
+      <el-step title="填写任务信息"></el-step>
+    </el-steps>
+    <div v-if="activeStep === 0">
+      <SelectStaff
+        :selectedStaff="selectedStaff"
+        @update:selectedStaff="val => selectedStaff = val"
+        @next="goToNextStep"
+      />
+    </div>
+    <div v-else-if="activeStep === 1">
+      <SelectFamilies
+        :selectedFamilies="selectedFamilies"
+        @update:selectedFamilies="val => selectedFamilies = val"
+        @next="goToNextStep"
+        @prev="goToPreviousStep"
+      />
+    </div>
+    <div v-else-if="activeStep === 2">
+      <TaskDetails
+        :taskDetailForm="taskDetailForm"
+        @update:taskDetailForm="val => taskDetailForm = val"
+        @submit="addTask"
+        @prev="goToPreviousStep"
+      />
+    </div>
   </el-dialog>
 </template>
 
@@ -130,19 +113,22 @@
 import { onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Edit, DeleteFilled } from '@element-plus/icons-vue';
-import { AddTask, DeleteTask, GetFamily, GetTaskList, UpdateTask } from '@/api';
+import { DeleteTask, GetTaskList, UpdateTask } from '@/api';
+import SelectStaff from '@/components/Task/SelectStaff.vue';
+import SelectFamilies from '@/components/Task/SelectFamilies.vue';
+import TaskDetails from '@/components/Task/TaskDetails.vue';
+import { addNewTask } from '@/api/task';
 
 // 定义任务表单接口
 interface TaskForm {
   uid: string;
   month: string;
   keyTask: string;
-  startTime: string | Date;
+  starTime: string | Date;
   endTime: string | Date;
   kpi: string;
   responsiblePerson: string;
-  isOverdue: boolean;
+  ifCompuete: boolean;
 }
 
 // 任务数据列表
@@ -187,17 +173,18 @@ let searchLabel = ref(searchLabelList.value[0].label);
 // 对话框相关
 let dialogEditVisible = ref(false);
 let dialogAddVisible = ref(false);
+const activeStep = ref(0);
 
 // 当前编辑或添加的任务表单数据
 const taskForm = reactive<TaskForm>({
   uid: '',
   month: '',
   keyTask: '',
-  startTime: '',
+  starTime: '',
   endTime: '',
   kpi: '',
   responsiblePerson: '',
-  isOverdue: false
+  ifCompuete: false
 });
 
 const taskFormRef = ref<FormInstance>();
@@ -211,6 +198,16 @@ const taskLabelList = ref([
   { value: 'kpi', label: 'KPI' },
   { value: 'responsiblePerson', label: '负责人' }
 ]);
+
+// 新增：多步表单数据
+const selectedStaff = ref(null);
+const selectedFamilies = ref([]);
+const taskDetailForm = ref({
+  TaskName: '',
+  TaskDescription: '',
+  StarTime: '',
+  EndTime: ''
+});
 
 // 打开编辑对话框
 const openEditDialog = (row: any) => {
@@ -260,18 +257,39 @@ const openAddDialog = () => {
     responsiblePerson: '',
     isOverdue: false
   });
+  selectedStaff.value = null;
+  selectedFamilies.value = [];
+  taskDetailForm.value = {
+    TaskName: '',
+    TaskDescription: '',
+    StarTime: '',
+    EndTime: ''
+  };
   dialogAddVisible.value = true;
+  activeStep.value = 0;
 };
 
 // 添加任务
 const addTask = () => {
-  AddTask(taskForm).then(res => {
-    if (res.status === 200) {
-      ElMessage.success('任务添加成功');
+  const payload = {
+    TaskName: taskDetailForm.value.TaskName,
+    TaskDescription: taskDetailForm.value.TaskDescription,
+    ExecutorId: selectedStaff.value ? selectedStaff.value.uid : 0,
+    ListFamilyId: selectedFamilies.value.map((f: any) => f.uid),
+    StarTime: taskDetailForm.value.StarTime,
+    EndTime: taskDetailForm.value.EndTime
+  };
+  addNewTask(payload)
+  .then(res=>{
+
+    console.log(res);
+    
+    if(res.status==200)
+    {
       dialogAddVisible.value = false;
-      getTaskList();
-    } 
+    }
   })
+  
 };
 
 // 导出任务
@@ -294,6 +312,14 @@ const getTaskList = () => {
 onMounted(() => {
   getTaskList();
 });
+
+const goToNextStep = () => {
+  activeStep.value++;
+};
+
+const goToPreviousStep = () => {
+  activeStep.value--;
+};
 </script>
 
 <style scoped>

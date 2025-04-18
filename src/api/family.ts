@@ -73,14 +73,6 @@ export function GetFamilyListByArea(data: any) {
     })
 }
 
-//获取户主列表
-export function GetFamilyList() {
-    return request({
-        url: baseUrl + '/Staff/GetHouseHoldList',//连接
-        method: 'get',//请求方法
-    })
-}
-
 export { UpdateStaffPhoto } from './staff'
 
 export const GetOneFamilyWithUid = (uid: string) => {
