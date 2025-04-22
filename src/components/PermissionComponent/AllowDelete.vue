@@ -35,7 +35,7 @@
 <script>
 import { ElMessage } from 'element-plus';
 import CustomList from './CustomList.vue';
-import {getPermissionToBeDeleted,getCheckedPermission,confirmRegionDelete,denyRegionDelete} from '@/api/region'
+import {getPermissionToBeChecked,getCheckedPermission,confirmRegionRequest,denyRegionRequest} from '@/api/region'
 
 export default {
     name: 'AllowDelete',
@@ -59,16 +59,16 @@ export default {
                 return
             }
             let form={
-                ReportId:this.selectedId,
+                RequestId:this.selectedId,
                 ReviewNote:this.reason
             }
             if(this.msg=='同意')
             {
-                confirmRegionDelete(form)
+                confirmRegionRequest(form)
                 .then(res=>{
                     if(res.status==200)
                     {
-                        ElMessage.success('审批通过，已同意删除该权限')
+                        ElMessage.success('审批通过，已同意进行该操作')
                         this.selectedId=''
                         this.reason=''
                         this.reasonDialog=false
@@ -88,11 +88,11 @@ export default {
                 )
             }
             else{
-                denyRegionDelete(form)
+                denyRegionRequest(form)
                 .then(res=>{
                     if(res.status==200)
                     {
-                        ElMessage.warning('审批未通过，已拒绝删除该权限')
+                        ElMessage.warning('审批未通过，已拒绝进行该操作')
                         this.selectedId=''
                         this.reason=''
                         this.reasonDialog=false
@@ -123,7 +123,7 @@ export default {
             this.selectedId=id
         },
         getAllowList(){
-            getPermissionToBeDeleted()
+            getPermissionToBeChecked()
             .then(res=>{
                 if(res.status==200)
                 {

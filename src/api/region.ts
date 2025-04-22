@@ -9,18 +9,18 @@ interface RegionPermission {
     TownshipStreets: number
 }
 
-export const denyRegionDelete = (data: Object) =>{
+export const denyRegionRequest = (data: Object) =>{
     return request({
-        url: baseUrl+'/StaffPermissions/RejectDeleteTownshipPermission',
+        url: baseUrl+'/StaffPermissions/RejectPermissionRequest',
         method: 'post',
         data
         
     })
 }
 
-export const confirmRegionDelete = (data: Object) =>{
+export const confirmRegionRequest = (data: Object) =>{
     return request({
-        url: baseUrl+'/StaffPermissions/ApproveDeleteTownshipPermission',
+        url: baseUrl+'/StaffPermissions/ApprovePermissionRequest',
         method: 'post',
         data
         
@@ -29,16 +29,16 @@ export const confirmRegionDelete = (data: Object) =>{
 
 export const getCheckedPermission = (data: Object) =>{
     return request({
-        url: baseUrl+'/StaffPermissions/GetPermissionReportAudited',
+        url: baseUrl+'/StaffPermissions/GetReviewedPermissionRequests',
         method: 'get',
         data
         
     })
 }
 
-export const getPermissionToBeDeleted = (data: Object) =>{
+export const getPermissionToBeChecked = (data: Object) =>{
     return request({
-        url: baseUrl+'/StaffPermissions/GetPermissionToBeDeleted',
+        url: baseUrl+'/StaffPermissions/GetPendingPermissionRequests',
         method: 'get',
         data
         
@@ -47,7 +47,7 @@ export const getPermissionToBeDeleted = (data: Object) =>{
 
 export const staffTryToDeleteStreetRegion = (data: Object) =>{
     return request({
-        url: baseUrl+'/StaffPermissions/RequestDeleteTownshipPermission',
+        url: baseUrl+'/StaffPermissions/ApplyDeleteTownshipPermission',
         method: 'post',
         data
         

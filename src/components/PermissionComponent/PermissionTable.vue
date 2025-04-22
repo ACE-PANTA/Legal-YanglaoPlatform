@@ -85,6 +85,8 @@ const formData = reactive({
   communityCode: ''
 })
 
+const setReason=ref('')
+
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -308,6 +310,9 @@ const searchCriteria = reactive({
   PageSize: 10
 });
 
+// 新增总条数
+const totalCount = ref(0);
+
 // 修改搜索方法
 const searchStaff = async () => {
   try {
@@ -324,6 +329,7 @@ const searchStaff = async () => {
     const res = await GetStaffList(query);
     if (res.status === 200) {
       staffList.value = res.data.staffDetails;
+      totalCount.value = res.data.totalCount || 0; // 假设后端返回 totalCount
     }
   } catch (error) {
     ElMessage.error('搜索工作人员失败');
@@ -459,7 +465,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate((valid) => {
     if (valid) {
-      const areaData = {
+      let areaData = {
         StaffUid: formData.staffId,
         ProvinceId: formData.provinceCode || '88888888',
         ProvinceName: formData.provinceName || '全部',
@@ -482,6 +488,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
       }
       else if(localStorage.getItem('UserRole')=='Staff')
       {
+        areaData['Reason']=setReason.value;
         res=setStaffRegionByStaff(areaData);
       }
 
@@ -492,7 +499,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
               ElMessage.error(res.data.msg);
               return;
             }
-            ElMessage.success('保存成功')
+            
             dialogVisible.value = false
             // 清空表单数据
             formData.staffId = ''
@@ -503,9 +510,19 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             formData.streetCode = ''
             formData.streetName = ''
             formData.fullAddress = ''
+            setReason.value=''
+            if(localPermission.value==3)
+            {
+              ElMessage.success('已发送申请，请等待市级管理者审批')
+            }
+            else
+            {
+              ElMessage.success('保存成功')
+            }
             GetStaffList(searchCriteria).then(res => {
               if (res.status === 200) {
                 staffList.value = res.data.staffDetails
+                
               }
             })
           } else {
@@ -564,6 +581,11 @@ const confirmDelete = (row)=>{
     ElMessage.warning('市级高管仅可删除区/县级的权限')
     return;
   }
+  if(role.value=='Staff'&&(localPermission.value==3||localPermission.value==4)&&(row.districtId=='88888888'&&row.townshipStreetsId=='88888888'))
+  {
+    ElMessage.warning('无该操作权限')
+    return;
+  }
   
   selectedRow.value=row
   confirmDeleteVisible.value=true
@@ -578,6 +600,7 @@ onMounted(async () => {
   GetStaffList(searchCriteria).then(res => {
     if (res.status === 200) {
       staffList.value = res.data.staffDetails
+      totalCount.value = res.data.totalCount || 0
     }
   })
   
@@ -689,6 +712,17 @@ const currentUserId = localStorage.getItem('Uid'); // 获取当前用户ID
           </template>
         </el-table-column>
       </el-table>
+      <!-- 分页组件 -->
+      <div style="margin: 16px 0; text-align: right;">
+        <el-pagination
+          background
+          layout="prev, pager, next, jumper, total"
+          :total="totalCount"
+          :page-size="searchCriteria.PageSize"
+          :current-page="searchCriteria.PageIndex"
+          @current-change="(page) => { searchCriteria.PageIndex = page; searchStaff(); }"
+        />
+      </div>
     </div>
 
     <!-- 区域分配表单 -->
@@ -786,6 +820,10 @@ const currentUserId = localStorage.getItem('Uid'); // 获取当前用户ID
 
         <el-form-item label="完整地址" v-if="role!='SuperAdmin'">
           <el-input v-model="formData.fullAddress" readonly />
+        </el-form-item>
+
+        <el-form-item label="分配理由" v-if="localPermission==3">
+          <el-input v-model="setReason" />
         </el-form-item>
         
         <el-form-item>

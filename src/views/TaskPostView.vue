@@ -5,13 +5,13 @@
   <!-- 增加、搜索、导出任务信息 -->
   <div style="width: 100%;">
     <div style="display: flex; padding-right:25px; padding-bottom: 10px; width:100%; justify-content: flex-end">
-      <el-select size="large" v-model="searchLabel" placeholder="请选择搜索类型" style="width:110px; margin-right: 10px;">
+      <!-- <el-select size="large" v-model="searchLabel" placeholder="请选择搜索类型" style="width:110px; margin-right: 10px;">
         <el-option v-for="label in searchLabelList" :key="label.label" :label="label.label" :value="label.label" />
       </el-select>
       <div style="padding-right:15px">
         <el-input size="large" v-model="searchValue" :placeholder="'请输入'+searchLabel" style="max-width:250px;"></el-input>
       </div>
-      <el-button size="large" type="primary" style="margin-right:10px">搜索</el-button>
+      <el-button size="large" type="primary" style="margin-right:10px">搜索</el-button> -->
       <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button>
       <el-button size="large" type="primary" @click="exportTask">导出</el-button>
     </div>
@@ -21,10 +21,10 @@
     <el-table :data="taskData" size="large" stripe style="width: 100%;">
       <el-table-column label="任务名称" prop="taskName" show-overflow-tooltip />
       <el-table-column label="任务详情" prop="taskDescription" show-overflow-tooltip />
-      <el-table-column label="是否过期" prop="ifCompuete" show-overflow-tooltip>
+      <el-table-column label="是否完成" prop="ifCompuete" show-overflow-tooltip>
         <template #default="scope">
-          <span v-if="scope.row.ifCompuete" style="color: red;">已过期</span>
-          <span v-else style="color: green;">未过期</span>
+          <span v-if="scope.row.ifCompuete" style="color: green;">已完成</span>
+          <span v-else style="color: red;">未完成</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="120">
@@ -75,7 +75,7 @@
     </template>
   </el-dialog>
  -->
-  
+
   <!-- 添加对话框 -->
   <el-dialog v-model="dialogAddVisible" title="添加任务信息" width="800">
     <el-steps :active="activeStep" align-center finish-status="success" style="margin-bottom: 20px;">

@@ -11,6 +11,7 @@ import FamilyEditDialog from '@/components/BaseInfors/FamilyEditDialog.vue';
 import ChildGrandInfoDialog from '@/components/BaseInfors/ChildGrandInfoDialog.vue';
 import DetailShowDialog from '@/components/BaseInfors/DetailShowDialog.vue';
 import { useMainStore } from '@/store';
+import VisitRecord from '@/components/BaseInfors/VisitRecord.vue'
 
 const formData = ref<Array<BasicInfTemplate>>([]);
 
@@ -27,6 +28,13 @@ const selectedRegion = ref({
   DistrictId: '88888888',
   TownshipStreetsId: '88888888',
 });
+
+const checkVisitVisible=ref(false);
+
+const checkingFamily=ref({})
+
+
+
 
 const provinces = ref([]);
 const cities = ref([]);
@@ -458,6 +466,11 @@ const initItemInfo = () => {
   });
 }
 
+const checkVisitRecord = async(row:any)=>{
+  checkingFamily.value=row.uid
+  checkVisitVisible.value=true
+}
+
 // 打开详细信息对话框
 const openDetailDialog = async (row: BasicInfTemplate) => {
   try {
@@ -785,9 +798,13 @@ const handlePageNumberChange = (page: number) => {
       </el-table-column>
       <el-table-column prop="annualIncome" label="家庭年收入(元)" show-overflow-tooltip />
       <el-table-column prop="annualExpenditure" label="家庭年支出(元)" show-overflow-tooltip />
-      <el-table-column label="操作" fixed="right" width="250">
+      <el-table-column label="操作" fixed="right" width="350">
         <template #default="{ row }">
           <div style="display: flex; justify-content: center;">
+            <el-button type="success" size="medium" style="margin:0 5px;" @click="checkVisitRecord(row)">
+              <el-icon><Document /></el-icon>
+              探访记录
+            </el-button>
             <el-button type="info" size="medium" style="margin:0 5px;" @click="openDetailDialog(row)">
               <el-icon>
                 <InfoFilled />
@@ -821,11 +838,16 @@ const handlePageNumberChange = (page: number) => {
       @current-change="handlePageNumberChange"
     />
 
+    <el-dialog v-model="checkVisitVisible" destroy-on-close width="50%" class="custom-dialog" >
+      <template #default>
+        <VisitRecord :record="checkingFamily" />
+      </template>
+    </el-dialog>
+
     <!-- 详细信息对话框 -->
     <el-dialog v-model="dialogDetailVisible" width="700px" class="custom-dialog" :modal="true">
       <template #default>
         <DetailShowDialog :data="detailInfo"></DetailShowDialog>
-          
       </template>
     </el-dialog>
 

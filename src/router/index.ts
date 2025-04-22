@@ -46,11 +46,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'volunteerService',
         component: () => import('../views/VolunteerService.vue'),
       },
-      {
-        path: 'visitRecord',
-        name: 'visitRecord',
-        component: () => import('../views/VisitRecordView.vue'),
-      },
+      // {
+      //   path: 'visitRecord',
+      //   name: 'visitRecord',
+      //   component: () => import('../views/VisitRecordView.vue'),
+      // },
       {
         path: 'employee',
         name: 'employee',

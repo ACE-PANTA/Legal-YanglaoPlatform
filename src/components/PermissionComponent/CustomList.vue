@@ -8,6 +8,14 @@
             <div style="display: flex;flex-direction: column;">
                 <div>申请时间：{{ item.createdAt.replace('T',' ') }}</div> 
                 <div>申请理由：{{ item.reason }}</div>
+                <div v-if="item.requestType==0">分配权限请求</div>
+                <div v-else>删除权限请求</div>
+            </div>
+            <div style="display: flex;flex-direction: column;">
+                <div>申请类型:<div v-if="item.requestType==0" style="color: green;">分配权限请求</div>
+                  <div v-else style="color: red;">删除权限请求</div>
+                </div> 
+                
             </div>
             <div v-if="approve && reject" class="actions">
                 <button @click="$emit('approve', item.uid)">同意</button>

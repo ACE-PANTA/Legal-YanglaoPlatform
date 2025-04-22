@@ -11,6 +11,7 @@ const showUrl=ref('');
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
 };
+const permission=ref(0)
 
 let userName = ref('');
 const defaultAvatarUrl = ref('https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png');
@@ -19,6 +20,7 @@ onMounted(() => {
   userName.value = store.userInfo.name.toString();
   showUrl.value = store.avatarUrl;
   index.value='/'+useRoute().path.split('/')[2];
+  permission.value=Number(store.userInfo.havePermissionLevel);
 });
 
 const handleCommand = (command: string) => {
@@ -91,12 +93,12 @@ const handleCommand = (command: string) => {
               </el-icon>
               <span>基本情况登记</span>
             </el-menu-item>
-            <el-menu-item index="/visitRecord" route="/home/visitRecord">
+            <!-- <el-menu-item index="/visitRecord" route="/home/visitRecord">
               <el-icon>
                 <View />
               </el-icon>
               <span>探访记录</span>
-            </el-menu-item>
+            </el-menu-item> -->
             <el-menu-item index="/volunteer" route="/home/volunteer">
               <el-icon>
                 <svg t="1743086385686" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7546" width="200" height="200"><path d="M50.176 1024C30.72 1024 15.36 1008.128 15.36 989.184c0-120.32 46.592-233.472 132.096-318.976 46.08-46.08 102.4-82.432 163.328-104.448-40.96-24.064-75.776-58.368-101.376-98.816-31.232-48.64-47.616-104.96-47.616-162.816C162.304 136.704 298.496 0 466.432 0c81.408 0 157.696 31.744 215.04 89.088s89.088 133.632 89.088 215.04c0 167.424-136.704 304.128-304.128 304.128-3.584 0-7.168 0-11.264-0.512-97.28 2.56-188.928 37.376-258.048 106.496-72.192 72.192-112.128 167.936-112.128 269.312 0.512 19.456-11.776 40.448-34.816 40.448z m416.256-479.232c1.536 0 3.072 0 5.12 0.512 130.048-2.56 236.032-110.592 236.032-241.152 0-132.608-108.032-241.152-241.152-241.152S225.28 171.52 225.28 304.128c0 129.024 100.864 234.496 229.888 240.64h11.264z" p-id="7547"></path><path d="M755.712 1017.344c-9.728 0-18.432-3.072-26.112-8.704-4.608-4.096-119.296-92.672-164.864-164.864-16.384-26.112-36.864-58.368-36.864-105.984 0-81.408 60.928-147.456 136.192-147.456 34.304 0 67.072 13.824 92.16 38.912 25.088-25.088 57.856-38.912 92.16-38.912 74.752 0 136.192 66.048 136.192 147.456 0 47.616-20.48 79.872-36.864 105.984-46.08 72.704-160.256 160.768-164.864 164.864-8.704 5.632-17.92 8.704-27.136 8.704z m-92.16-362.496c-40.96 0-74.24 37.376-74.24 82.944 0 26.112 11.776 46.592 27.136 70.656 32.768 51.712 113.152 118.784 139.776 140.288 26.112-21.504 106.496-88.064 139.776-140.288 15.36-24.064 27.136-44.032 27.136-70.656 0-46.08-33.28-82.944-74.24-82.944-29.184 0-55.808 19.456-67.584 48.64l-5.12 10.752h-3.072c-4.608 4.096-10.752 6.144-16.896 6.144-6.656 0-12.8-2.56-17.92-7.168l-2.048 0.512-4.608-10.24c-12.288-29.696-38.912-48.64-68.096-48.64z" p-id="7548"></path></svg>
@@ -121,7 +123,7 @@ const handleCommand = (command: string) => {
               </el-icon>
               <span>工作人员记录表</span>
             </el-menu-item>
-            <el-menu-item index="/task" route="/home/task">
+            <el-menu-item index="/task" route="/home/task" v-if="permission==4">
               <el-icon>
                 <svg t="1742630238698" class="icon" viewBox="0 0 1038 1024" version="1.1"
                   xmlns="http://www.w3.org/2000/svg" p-id="3481" width="200" height="200">
@@ -135,6 +137,10 @@ const handleCommand = (command: string) => {
             <el-menu-item index="/permission" route="/home/permission">
               <el-icon><LocationInformation /></el-icon>
               <span>行政区域-工作划分</span>
+            </el-menu-item>
+            <el-menu-item>
+              <el-icon><Connection /></el-icon>
+              <span>资源管理</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
