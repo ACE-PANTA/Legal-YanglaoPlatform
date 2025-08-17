@@ -13,7 +13,7 @@
       </div>
       <el-button size="large" type="primary" style="margin-right:10px">搜索</el-button>
       <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button>
-      <el-button size="large" type="primary" @click="exportActivity">导出</el-button>
+      <!-- <el-button size="large" type="primary" @click="exportActivity">导出</el-button> -->
     </div>
   </div>
   <!-- 表格信息 -->
@@ -21,8 +21,16 @@
     <el-table :data="activityData" size="large" stripe style="width: 100%;">
       <el-table-column prop="theme" label="主题" show-overflow-tooltip />
       <el-table-column prop="responsiblePerson" label="负责人" show-overflow-tooltip />
-      <el-table-column prop="activityStartTime" label="开始时间" show-overflow-tooltip />
-      <el-table-column prop="activityEndTime" label="结束时间" show-overflow-tooltip />
+      <el-table-column label="开始时间" show-overflow-tooltip >
+        <template #default="{ row }">
+          <span>{{ row.activityStartTime.toString().replace('T',' ') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="结束时间" show-overflow-tooltip >
+        <template #default="{ row }">
+          <span>{{ row.activityEndTime.toString().replace('T',' ') }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="activityAddress" label="活动地点" show-overflow-tooltip />
       <el-table-column prop="discription" label="活动描述" show-overflow-tooltip />
       <el-table-column prop="participants" label="参与人员" show-overflow-tooltip />

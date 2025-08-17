@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import TreeNode from './TreeNode.vue'; // 确保正确引入 TreeNode 组件
-import { getRegionTree } from '@/api/region';
+import { getPermissionTree } from '@/api/region';
 
 const treeData = ref({
   uid:'',
@@ -12,7 +12,7 @@ const treeData = ref({
 });
 
 const getTree= ()=>{
-  getRegionTree()
+  getPermissionTree()
   .then(res=>{
     if(res.status==200)
     {

@@ -1,5 +1,6 @@
 import request from "@/utils/request"
 import baseUrl from "@/utils/baseUrl"
+import serverUrl from "@/utils/baseUrl"
 
 export function UpdateStaff(data: any) {
     return request({
@@ -46,8 +47,16 @@ export const UpdateStaffPhoto = (data: FormData) => {
 
 export const getStaffPhoto = (key:string) => {
     return request({
-        url: 'http://140.143.196.200:8000' + '/api/Staff/GetStaffPhoto',
+        url: serverUrl + '/Staff/GetStaffPhoto',
         method: 'get',
         params: {photokey:key}
+    })
+}
+
+export function refreshStaffPassword(StaffUid: string) {
+    return request({
+        url: baseUrl + '/Staff/RefreshPassword',
+        method: 'post',
+        data: { StaffUid }
     })
 }

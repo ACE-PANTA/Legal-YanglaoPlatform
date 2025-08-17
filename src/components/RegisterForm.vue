@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, type ComponentSize, type FormInstance, type FormRules } from 'element-plus'
+import { onMounted, reactive, ref, defineEmits } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { sha256 } from 'js-sha256'
-import { Register} from '@/api/staff'
-import { setStaffRegion } from '@/api/region'
+import { Register } from '@/api/staff'
 import Dentify from '@/components/Dentify.vue'
-import { useRouter } from 'vue-router'
 import { jsonp } from 'vue-jsonp'
+import { useRouter } from 'vue-router'
+
+const emit = defineEmits(['register-success'])
 
 const router = useRouter()
 
@@ -122,6 +123,7 @@ const validatePass = (rule: any, value: any, callback: any) => {
 const rules = reactive<FormRules<RegisterForm>>({
     userName: [
         { required: true, message: '用户名不能为空！', trigger: 'blur' },
+        { pattern: /^[A-Za-z0-9]{3,}$/, message: '用户名只能包含数字和英文，且不少于3个字符', trigger: 'blur' }
     ],
     password: [
         { required: true, message: '密码不能为空！', trigger: 'blur' },
@@ -199,8 +201,7 @@ const register = debounce(async (formEl: FormInstance | undefined) => {
             Register(data).then(res => {
                 console.log(res.data);
                 if (res.data.code === 200) {
-                    ElMessage.success('注册成功')
-                    router.push('/login')
+                    handleRegisterSuccess()
                 } else {
                     ElMessage.error(res.data.msg)
                 }
@@ -213,6 +214,12 @@ const register = debounce(async (formEl: FormInstance | undefined) => {
         }
     })
 }, 1000)  // 设置1秒的防抖延迟
+
+const handleRegisterSuccess = () => {
+  ElMessage.success('新增用户成功')
+  emit('register-success')
+  // 可选：router.push('/login')
+}
 
 // 区域数据相关
 
@@ -403,141 +410,98 @@ onMounted(async () => {
 </script>
 
 <template>
-    <el-container id="loginPage">
-        <el-header style="background-color: rgba(250,250,250,0.6);">
-            <div id="topTitle">
-                <el-icon><img src="/public/logo.jpg" style="width: 130%;aspect-ratio: 1/1;margin-right: 50%;"></el-icon>                
-                计生特殊家庭全方位帮扶云平台
-            </div>
-        </el-header>
-        
-        <el-main>
-            <div class="register">
-                <div style="width:100%; margin-bottom: 10px;">
-                    <div>
-                        <el-icon style="color: rgb(253, 185, 82);"><Avatar /></el-icon>
-                        <span class="title">注册</span>
-                    </div>
-                    <div class="iconImg"></div>
-                </div>
-                <el-form ref="registerFormRef" :model="registerForm" style="width:100%; padding: 0 30px;" :rules="rules">
-                    <el-form-item prop="username" style="margin-bottom: 20px">
-                        <el-input size="large" v-model="registerForm.userName" placeholder="请输入用户名">
-                            <template #prefix>
-                                <el-icon><UserFilled /></el-icon>
-                            </template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item prop="username" style="margin-bottom: 20px">
-                        <el-input size="large" v-model="registerForm.name" placeholder="请输入姓名">
-                            <template #prefix>
-                                <el-icon><UserFilled /></el-icon>
-                            </template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item prop="password" style="margin-bottom: 20px">
-                        <el-input size="large" type="password" v-model="registerForm.password" placeholder="请输入密码 (8-16位)" show-password>
-                            <template #prefix><el-icon><Key /></el-icon></template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item prop="checkPass" style="margin-bottom: 20px">
-                        <el-input size="large" type="password" v-model="registerForm.checkPass" placeholder="请再次输入密码" show-password>
-                            <template #prefix><el-icon><Key /></el-icon></template>
-                        </el-input>         
-                    </el-form-item>
+  <el-form ref="registerFormRef" :model="registerForm" style="width:100%; padding: 0 30px;" :rules="rules">
+    <el-form-item prop="username" style="margin-bottom: 20px">
+      <el-input size="large" v-model="registerForm.userName" placeholder="请输入登录使用的账号(只支持英文、数字的组合，至少三个字符)">
+        <template #prefix>
+          <el-icon><UserFilled /></el-icon>
+        </template>
+      </el-input>
+    </el-form-item>
+    <el-form-item prop="username" style="margin-bottom: 20px">
+      <el-input size="large" v-model="registerForm.name" placeholder="请输入注册账号的姓名">
+        <template #prefix>
+          <el-icon><Postcard /></el-icon>
+        </template>
+      </el-input>
+    </el-form-item>
+    <el-form-item prop="password" style="margin-bottom: 20px">
+      <el-input size="large" type="password" v-model="registerForm.password" placeholder="请输入密码 (8-16位)" show-password>
+        <template #prefix><el-icon><Key /></el-icon></template>
+      </el-input>
+    </el-form-item>
+    <el-form-item prop="checkPass" style="margin-bottom: 20px">
+      <el-input size="large" type="password" v-model="registerForm.checkPass" placeholder="请再次输入密码" show-password>
+        <template #prefix><el-icon><Key /></el-icon></template>
+      </el-input>         
+    </el-form-item>
 
-                    <el-form-item prop="phone" style="margin-bottom: 30px">
-                        <div style="display: flex; justify-content: space-between; width:100%">
-                            <el-input size="large" v-model="registerForm.phone" placeholder="请输入手机号" style="margin-right:30px;">
-                            <template #prefix><el-icon><Iphone /></el-icon></template>
-                            </el-input>
-                        </div>
-                    </el-form-item>
+    <el-form-item prop="phone" style="margin-bottom: 30px">
+      <div style="display: flex; justify-content: space-between; width:100%">
+        <el-input size="large" v-model="registerForm.phone" placeholder="请输入手机号" style="margin-right:30px;">
+        <template #prefix><el-icon><Iphone /></el-icon></template>
+        </el-input>
+      </div>
+    </el-form-item>
 
-                    <el-form-item prop="identificationNumber" style="margin-bottom: 30px">
-                        <div style="display: flex; justify-content: space-between; width:100%">
-                            <el-input size="large" v-model="registerForm.identificationNumber" placeholder="请输入身份证号" style="margin-right:30px;">
-                            <template #prefix><el-icon><Postcard /></el-icon></template>
-                            </el-input>
-                        </div>
-                    </el-form-item>
+    <el-form-item prop="identificationNumber" style="margin-bottom: 30px">
+      <div style="display: flex; justify-content: space-between; width:100%">
+        <el-input size="large" v-model="registerForm.identificationNumber" placeholder="请输入身份证号" style="margin-right:30px;">
+        <template #prefix><el-icon><Postcard /></el-icon></template>
+        </el-input>
+      </div>
+    </el-form-item>
 
-                    <el-form-item prop="gender" style="margin-bottom: 20px">
-                        <label style="color: black;margin-right: 10%;margin-left: 2%;">性别</label>
-                        <el-radio-group v-model="registerForm.gender">
-                            <el-radio label="男" value="男">男</el-radio>
-                            <el-radio label="女" value="女">女</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                    <el-form-item prop="role" style="margin-bottom: 20px">
-                        <label style="color: black;margin-right: 10%;margin-left: 2%;">角色</label>
-                        <el-radio-group v-model="registerForm.role">
-                            <el-radio label="1" :value="E_Role.Staff">工作人员</el-radio>
-                            <el-radio label="2" :value="E_Role.Volunteer">志愿者</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
+    <el-form-item prop="gender" style="margin-bottom: 20px">
+      <label style="color: black;margin-right: 10%;margin-left: 2%;">性别</label>
+      <el-radio-group v-model="registerForm.gender">
+        <el-radio label="男" value="男">男</el-radio>
+        <el-radio label="女" value="女">女</el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <el-form-item prop="role" style="margin-bottom: 20px">
+      <label style="color: black;margin-right: 10%;margin-left: 2%;">角色</label>
+      <el-radio-group v-model="registerForm.role">
+        <el-radio label="1" :value="E_Role.Staff">工作人员</el-radio>
+        <el-radio label="2" :value="E_Role.Volunteer">志愿者</el-radio>
+      </el-radio-group>
+    </el-form-item>
+    <el-form-item label="工作人员地址">
+    </el-form-item>
+    <el-form-item label="省份" prop="province">
+      <el-select v-model="registerForm.ProvinceId" placeholder="请选择省份" @change="handleProvinceChange">
+        <el-option v-for="item in provinces" :key="item.id" :label="item.fullname" :value="item.id" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="城市" prop="municipality" v-if="!MUNICIPALITIES.includes(String(registerForm.ProvinceId))">
+      <el-select v-model="registerForm.MunicipalityId" placeholder="请选择城市" @change="handleCityChange" :disabled="!registerForm.ProvinceId">
+        <el-option v-for="item in cities" :key="item.id" :label="item.fullname" :value="item.id" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="区县" prop="district">
+      <el-select v-model="registerForm.DistrictId" placeholder="请选择区县" @change="handleDistrictChange" :disabled="!registerForm.ProvinceId || (!MUNICIPALITIES.includes(String(registerForm.ProvinceId)) && !registerForm.MunicipalityId)">
+        <el-option v-for="item in districts" :key="item.id" :label="item.fullname" :value="item.id" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="街道/乡镇" prop="townshipStreets">
+      <el-select v-model="registerForm.TownshipStreetsId" placeholder="请选择街道/乡镇" @change="handleStreetChange" :disabled="!registerForm.DistrictId">
+        <el-option v-for="item in streets" :key="item.id" :label="item.fullname" :value="item.id" />
+      </el-select>
+    </el-form-item>
+    
+    <el-form-item style="text-align: center; margin:auto">
+      <el-button style="width: 100% ;margin: auto;" type="primary" @click="register(registerFormRef)">确认新增</el-button>
+    </el-form-item>
 
-                    <el-form-item label="省份" prop="province">
-                        <el-select v-model="registerForm.ProvinceId" placeholder="请选择省份" @change="handleProvinceChange">
-                            <el-option v-for="item in provinces" :key="item.id" :label="item.fullname" :value="item.id" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="城市" prop="municipality" v-if="!MUNICIPALITIES.includes(String(registerForm.ProvinceId))">
-                        <el-select v-model="registerForm.MunicipalityId" placeholder="请选择城市" @change="handleCityChange" :disabled="!registerForm.ProvinceId">
-                            <el-option v-for="item in cities" :key="item.id" :label="item.fullname" :value="item.id" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="区县" prop="district">
-                        <el-select v-model="registerForm.DistrictId" placeholder="请选择区县" @change="handleDistrictChange" :disabled="!registerForm.ProvinceId || (!MUNICIPALITIES.includes(String(registerForm.ProvinceId)) && !registerForm.MunicipalityId)">
-                            <el-option v-for="item in districts" :key="item.id" :label="item.fullname" :value="item.id" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="街道/乡镇" prop="townshipStreets">
-                        <el-select v-model="registerForm.TownshipStreetsId" placeholder="请选择街道/乡镇" @change="handleStreetChange" :disabled="!registerForm.DistrictId">
-                            <el-option v-for="item in streets" :key="item.id" :label="item.fullname" :value="item.id" />
-                        </el-select>
-                    </el-form-item>
-
-                    <el-form-item prop="vcode" style="margin-bottom: 30px">
-                        <div style="display: flex; justify-content: space-between; width:100%">
-                            <el-input size="large" v-model="registerForm.vcode" placeholder="请输入验证码" style="margin-right:30px;">
-                                <template #prefix>
-                                    <el-icon><Key /></el-icon>
-                                </template>
-                            </el-input>
-                            <div v-on:click="getvCode">
-                                <Dentify :identifyCode="vcode"/>
-                            </div>
-                        </div>
-                    </el-form-item>
-                    
-                    <el-form-item style="text-align: center; margin:auto">
-                        <el-button style="width: 100% ;margin: auto;" type="primary" @click="register(registerFormRef)">注册</el-button>
-                    </el-form-item>
-                    
-                    <div style="text-align: end; margin-right:10px; margin-top:30px">
-                        <router-link to="/login">返回登录</router-link>
-                    </div>
-                </el-form>
-        </div>
-
-        </el-main>
-        
-        <el-footer style=" display: flex; width:100%; text-align: center; ">
-            <div style="margin:auto">
-                <span style="color:white">竞秀区智慧养老院信息化平台服务平台@2025</span>
-            </div>
-        </el-footer>
-    </el-container>
-
+  </el-form>
 </template>
 
 <style scoped>
 #topTitle {
     display: flex;
-    justify-content: center;
+    justify-content: left;
     align-items: center;
-    font-size: 20px;
+    font-size: 30px;
     font-weight: 1000;
     color: rgb(62, 63, 65);
 }

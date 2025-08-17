@@ -1,9 +1,10 @@
 //根路径的处理
 //const baseUrl = "http://localhost:65415/api"
 // const baseUrl = "/api"
-const baseUrl = "http://140.143.196.200:8000/api"
+const baseUrl = "https://www.bdjsbffile.cn/api";
+const serverUrl = "https://www.bdjsbffile.cn/api";
 
-export default baseUrl
+export default baseUrl;
 
 /**
  * cors

@@ -37,11 +37,6 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/PersonalCenterView.vue'),
       },
       {
-        path: 'task',
-        name: 'task',
-        component: () => import('../views/TaskPostView.vue'),
-      },
-      {
         path: 'volunteerService',
         name: 'volunteerService',
         component: () => import('../views/VolunteerService.vue'),
@@ -65,13 +60,18 @@ const routes: Array<RouteRecordRaw> = [
         path: 'permission',
         name: 'permission',
         component: () => import('../views/PermissionView.vue'),
+      },
+      {
+        path: 'task',
+        name: 'task',
+        component: () => import('../views/TaskFamilyView.vue'),
+      },
+      {
+        path: 'regionmanage',
+        name: 'regionmanage',
+        component: () => import('../views/RegionManageView.vue'),
       }
     ]
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: () => import('../views/RegisterView.vue'),
   }
 ]
 

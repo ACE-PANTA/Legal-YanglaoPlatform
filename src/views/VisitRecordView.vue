@@ -11,7 +11,7 @@
         style="max-width:250px; margin-right:10px;" />
       <el-button size="large" type="primary" style="margin-right:10px">搜索</el-button>
       <!-- <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button> -->
-      <el-button size="large" type="primary" @click="exportData">导出</el-button>
+      <el-button size="large" type="primary">导出</el-button>
     </div>
 
     <!-- 表格 -->
@@ -824,6 +824,11 @@
         </el-row>
       </el-form>
     </el-dialog>
+
+    <!-- 导出对话框 -->
+    <el-dialog v-model="showExportDialog" title="导出数据" width="500">
+      <ExportVisitDialog @close="showExportDialog = false" />
+    </el-dialog>
   </div>
 </template>
 
@@ -833,6 +838,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type UploadFile } from 'ele
 import ChinaAeraSelect from '@/components/ChinaAeraSelect.vue';
 import { Edit, DeleteFilled, InfoFilled } from '@element-plus/icons-vue';
 import { AddVisit, DeleteVisit, GetVisitList, UpdateVisit } from '@/api';
+import ExportVisitDialog from '@/components/Exports/ExportVisitDialog.vue'
 
 // 定义探访记录接口
 interface VisitRecord {
@@ -904,6 +910,7 @@ const searchLabelList = ref(['开始时间', '结束时间', '服务对象姓名
 const dialogEditVisible = ref(false);
 const dialogAddVisible = ref(false);
 const dialogDetailVisible = ref(false);
+const showExportDialog = ref(false);
 
 let currentRecord = reactive<VisitRecord>({
   uid: '', // 初始化为空字符串

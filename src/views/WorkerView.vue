@@ -2,21 +2,16 @@
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElDialog, ElButton, ElInput, ElMessageBox } from 'element-plus'
 import { GetStaffList} from '@/api'
-import {jsonp} from 'vue-jsonp'
 import { useMainStore } from '@/store'
-import { DeleteStaff,UpdateStaff } from '@/api/staff'
-
+import { DeleteStaff,UpdateStaff, refreshStaffPassword } from '@/api/staff'
+import RegisterForm from '@/components/RegisterForm.vue' // 新增：引入注册表单组件
+import request from '@/utils/request'
+import ExportVisitDialog from "@/components/Exports/ExportVisitDialog.vue";
+// 新增：引入单员工导出组件
+import ExportStaffVisitDialog from "@/components/Exports/ExportStaffVisitDialog.vue";
+import AreaSelector from '@/components/Common/AreaSelector.vue'
 
 const role=ref('');
-
-// 区域数据接口
-interface DistrictItem {
-  id: string
-  fullname: string
-  name: string
-  type?: number
-  children?: DistrictItem[]
-}
 
 // 添加工作人员数据接口
 interface StaffItem {
@@ -40,29 +35,8 @@ interface StaffItem {
   skill?: string
 }
 
-// 添加数据缓存接口
-interface AreaCache {
-  [key: string]: DistrictItem[]
-}
 
-// 添加角色枚举
-enum E_Role {
-  Manager = 0,      // 高管
-  Staff = 1,        // 员工
-  Volunteer = 2,    // 志愿者
-  SuperAdmin = 88   // 超级管理员
-}
 
-// 添加角色名称映射
-const roleNameMap = {
-  [E_Role.Manager]: '高管',
-  [E_Role.Staff]: '员工',
-  [E_Role.Volunteer]: '志愿者',
-  [E_Role.SuperAdmin]: '超级管理员'
-}
-
-// 添加获取角色名称的方法
-const getRoleName = (role: number) => roleNameMap[role as E_Role] || '未知角色'
 
 // 表单数据
 const formData = reactive({
@@ -83,21 +57,31 @@ const formData = reactive({
 
 const localPermission=ref(0)
 
-// 区域数据
-const provinces = ref<DistrictItem[]>([])
-const cities = ref<DistrictItem[]>([])
-const districts = ref<DistrictItem[]>([])
-const streets = ref<DistrictItem[]>([])
+// 添加角色枚举
+enum E_Role {
+  Manager = 0,      // 高管
+  Staff = 1,        // 员工
+  Volunteer = 2,    // 志愿者
+  SuperAdmin = 88   // 超级管理员
+}
 
-// 添加数据缓存
-const areaCache = reactive<AreaCache>({
-  provinces: [],
-  cities: [],
-  districts: [],
-  streets: []
-})
+// 添加角色名称映射
+const roleNameMap = {
+  [E_Role.Manager]: '高管',
+  [E_Role.Staff]: '员工',
+  [E_Role.Volunteer]: '志愿者',
+  [E_Role.SuperAdmin]: '超级管理员'
+}
+
+// 添加获取角色名称的方法
+const getRoleName = (role: number) => roleNameMap[role as E_Role] || '未知角色'
+
+
+
 
 const staffList = ref<StaffItem[]>([])
+// 新增：分页相关
+const totalCount = ref(0)
 
 
 // 添加缓存键常量
@@ -116,213 +100,80 @@ const ALL_OPTION = {
   fullname: '全部'
 }
 
-// 添加缓存操作方法
-const loadCacheData = () => {
-  try {
-    const cachedProvinces = localStorage.getItem(CACHE_KEY.PROVINCES)
-    const cachedCities = localStorage.getItem(CACHE_KEY.CITIES)
-    const cachedDistricts = localStorage.getItem(CACHE_KEY.DISTRICTS)
 
-    if (cachedProvinces) {
-      areaCache.provinces = JSON.parse(cachedProvinces)
-      provinces.value = areaCache.provinces
-    }
-    if (cachedCities) {
-      areaCache.cities = JSON.parse(cachedCities)
-    }
-    if (cachedDistricts) {
-      areaCache.districts = JSON.parse(cachedDistricts)
-    }
-  } catch (error) {
-    console.error('加载缓存数据失败:', error)
-  }
-}
 
-const saveCacheData = () => {
-  try {
-    localStorage.setItem(CACHE_KEY.PROVINCES, JSON.stringify(areaCache.provinces))
-    localStorage.setItem(CACHE_KEY.CITIES, JSON.stringify(areaCache.cities))
-    localStorage.setItem(CACHE_KEY.DISTRICTS, JSON.stringify(areaCache.districts))
-  } catch (error) {
-    console.error('保存缓存数据失败:', error)
-  }
-}
+const searchRegion=ref({
+  provinceId: '88888888',
+  provinceName: '全部',
+  cityId: '88888888',
+  cityName: '全部',
+  districtId: '88888888',
+  districtName: '全部',
+  streetId: '88888888',
+  streetName: '全部'
+})
 
-const addDefaultOption = (list: DistrictItem[]) => [{ id: '88888888', fullname: '全部' }, ...list];
-
-const getProvinces = async () => {
-  try {
-    if (areaCache.provinces.length > 0) {
-      provinces.value = addDefaultOption(areaCache.provinces);
-      return;
-    }
-    const res = await jsonp('https://apis.map.qq.com/ws/district/v1/list', {
-      key: 'LXLBZ-HP66Q-PYL5K-B74JY-IFTMK-RYFV2',
-      output: 'jsonp'
-    });
-    if (res.status === 0) {
-      areaCache.provinces = res.result[0];
-      provinces.value = addDefaultOption(areaCache.provinces);
-      saveCacheData();
-    }
-  } catch (error) {
-    ElMessage.error('获取省份数据失败');
-  }
-};
-
-const getChildren = async (id: string, level: number) => {
-  try {
-    if (level === 1 && areaCache.cities[id]) {
-      cities.value = addDefaultOption(areaCache.cities[id]);
-      return;
-    }
-    if (level === 2 && areaCache.districts[id]) {
-      districts.value = addDefaultOption(areaCache.districts[id]);
-      return;
-    }
-    if (level === 3 && areaCache.streets && areaCache.streets[id]) {
-      streets.value = addDefaultOption(areaCache.streets[id]);
-      return;
-    }
-
-    const res = await jsonp('https://apis.map.qq.com/ws/district/v1/getchildren', {
-      key: 'LXLBZ-HP66Q-PYL5K-B74JY-IFTMK-RYFV2',
-      id: id,
-      output: 'jsonp'
-    });
-
-    if (res.status === 0) {
-      if (level === 1) {
-        if (MUNICIPALITIES.includes(id)) {
-          areaCache.districts[id] = res.result[0];
-          districts.value = addDefaultOption(areaCache.districts[id]);
-          cities.value = [];
-        } else {
-          areaCache.cities[id] = res.result[0];
-          cities.value = addDefaultOption(areaCache.cities[id]);
-          districts.value = [];
-        }
-        streets.value = [];
-      } else if (level === 2) {
-        areaCache.districts[id] = res.result[0];
-        districts.value = addDefaultOption(areaCache.districts[id]);
-        streets.value = [];
-      } else if (level === 3) {
-        if (!areaCache.streets) areaCache.streets = [];
-        areaCache.streets[id] = res.result[0];
-        streets.value = addDefaultOption(areaCache.streets[id]);
-      }
-      saveCacheData();
-    }
-  } catch (error) {
-    ElMessage.error('获取下级行政区失败');
-  }
-};
-
-// 修改选择处理方法
-const handleProvinceChange = async (value: string) => {
-  formData.provinceCode = value
-  formData.provinceName = value === '88888888' ? '全部' : (provinces.value.find(p => p.id === value)?.fullname || '')
-  formData.cityCode = ''
-  formData.districtCode = ''
-  formData.streetCode = ''
-  searchCriteria.MunicipalityId=''
-  searchCriteria.DistrictId=''
-  searchCriteria.TownshipStreetsId=''
-  
-  if (value && value !== '88888888') {
-    if (MUNICIPALITIES.includes(value)) {
-      await getChildren(value, 1)
-    } else {
-      await getChildren(value, 1)
-    }
-  }
-}
-
-const handleCityChange = async (value: string) => {
-  formData.cityCode = value
-  formData.cityName = value === '88888888' ? '全部' : (cities.value.find(c => c.id === value)?.fullname || '')
-  formData.districtCode = ''
-  formData.streetCode = ''
-  searchCriteria.DistrictId=''
-  searchCriteria.TownshipStreetsId=''
-  if (value && value !== '88888888') await getChildren(value, 2)
-}
-
-const handleDistrictChange = async (value: string) => {
-  formData.districtCode = value
-  formData.districtName = value === '88888888' ? '全部' : (districts.value.find(d => d.id === value)?.fullname || '')
-  formData.streetCode = ''
-  searchCriteria.TownshipStreetsId=''
-  if (value && value !== '88888888') await getChildren(value, 3)
-}
-
-const handleStreetChange = (value: string) => {
-  formData.streetCode = value
-  formData.streetName = value === '88888888' ? '全部' : (streets.value.find(s => s.id === value)?.fullname || '')
-  updateFullAddress()
-}
-
-// 更新完整地址
-const updateFullAddress = () => {
-  const parts = []
-  if (formData.provinceCode) {
-    parts.push(formData.provinceCode === '88888888' ? '全部' : 
-      provinces.value.find(p => p.id === formData.provinceCode)?.fullname)
-  }
-  if (!MUNICIPALITIES.includes(formData.provinceCode) && formData.cityCode) {
-    parts.push(formData.cityCode === '88888888' ? '全部' : 
-      cities.value.find(c => c.id === formData.cityCode)?.fullname)
-  }
-  if (formData.districtCode) {
-    parts.push(formData.districtCode === '88888888' ? '全部' : 
-      districts.value.find(d => d.id === formData.districtCode)?.fullname)
-  }
-  if (formData.streetCode) {
-    parts.push(formData.streetCode === '88888888' ? '全部' : 
-      streets.value.find(s => s.id === formData.streetCode)?.fullname)
-  }
-  formData.fullAddress = parts.filter(Boolean).join(' ')
-}
 
 // 搜索条件
-const searchCriteria = reactive({
-  ProvinceId: '88888888',
-  MunicipalityId: '88888888',
-  DistrictId: '88888888',
-  TownshipStreetsId: '88888888',
+const searchCriteria = ref({
+  provinceId: '88888888',
+  provinceName: '全部',
+  cityId: '88888888',
+  cityName: '全部',
+  districtId: '88888888',
+  districtName: '全部',
+  streetId: '88888888',
+  streetName: '全部',
   StaffName: '',
   IdentificationNumber: '',
   PageIndex: 1,
   PageSize: 10
 });
 
-// 修改搜索方法
+// 修改搜索方法，获取总条数
 const searchStaff = async () => {
   try {
+    // 字段转换，接口参数名与AreaSelector组件字段对应关系
     const query = {
-      ProvinceId: searchCriteria.ProvinceId,
-      MunicipalityId: searchCriteria.MunicipalityId,
-      DistrictId: searchCriteria.DistrictId,
-      TownshipStreetsId: searchCriteria.TownshipStreetsId,
-      StaffName: searchCriteria.StaffName,
-      IdentificationNumber: searchCriteria.IdentificationNumber,
-      PageIndex: searchCriteria.PageIndex,
-      PageSize: searchCriteria.PageSize
-    };
-    const res = await GetStaffList(query);
+      ProvinceId: searchRegion.value.provinceId,
+      ProvinceName: searchRegion.value.provinceName,
+      MunicipalityId: searchRegion.value.cityId,
+      MunicipalityName: searchRegion.value.cityName,
+      DistrictId: searchRegion.value.districtId,
+      DistrictName: searchRegion.value.districtName,
+      TownshipStreetsId: searchRegion.value.streetId,
+      TownshipStreetsName: searchRegion.value.streetName,
+      StaffName: searchCriteria.value.StaffName,
+      IdentificationNumber: searchCriteria.value.IdentificationNumber,
+      PageIndex: searchCriteria.value.PageIndex,
+      PageSize: searchCriteria.value.PageSize
+    }
+    const res = await GetStaffList(query)
     if (res.status === 200) {
-      staffList.value = res.data.staffDetails;
+      staffList.value = res.data.staffDetails
+      totalCount.value = res.data.totalCount || 0
     }
   } catch (error) {
-    ElMessage.error('搜索工作人员失败');
+    ElMessage.error('搜索工作人员失败')
   }
 };
 
+const showExportDialog = ref(false);
+// 新增：单员工导出弹窗及当前员工uid
+const showStaffExportDialog = ref(false)
+const exportStaffUid = ref('')
+// 新增：导出员工姓名
+const exportStaffName = ref('')
+
+// 修改：打开单员工导出弹窗时带上姓名
+const openStaffExportDialog = (uid: string, name: string) => {
+  exportStaffUid.value = uid
+  exportStaffName.value = name
+  showStaffExportDialog.value = true
+}
+
 // 修改onMounted
 onMounted(async () => {
-  // 首先加载缓存数据
-  loadCacheData()
   
   // 获取工作人员列表
   GetStaffList(searchCriteria).then(res => {
@@ -331,10 +182,7 @@ onMounted(async () => {
     }
   })
   
-  // 如果没有省份数据，则获取
-  if (!areaCache.provinces.length) {
-    await getProvinces()
-  }
+
 
   localPermission.value=Number(useMainStore().userInfo.havePermissionLevel);
   role.value=localStorage.getItem('UserRole')
@@ -429,6 +277,40 @@ const deleteStaff = (staff: StaffItem) => {
     ElMessage.info('已取消删除');
   });
 };
+
+// 新增：注册弹窗相关
+const registerDialogVisible = ref(false)
+const handleRegisterSuccess = () => {
+  registerDialogVisible.value = false
+  searchStaff()
+}
+
+// 新增：重置密码方法
+const resetPassword = (staff: StaffItem) => {
+  ElMessageBox.confirm(
+    `确定要重置用户 ${staff.name} 的密码吗？\r\n重置后密码为 12345678`,
+    '重置密码',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await refreshStaffPassword(staff.uid)
+      ElMessage.success('密码重置成功')
+    } catch (e) {
+      ElMessage.error('密码重置失败')
+    }
+  }).catch(() => {})
+}
+
+// 修改：关闭单员工导出弹窗时清空数据
+const closeStaffExportDialog = () => {
+  showStaffExportDialog.value = false
+  exportStaffUid.value = ''
+  exportStaffName.value = ''
+}
 </script>
 
 <template>
@@ -455,25 +337,27 @@ const deleteStaff = (staff: StaffItem) => {
         />
       </div>
       <div style="color: black;margin-right: 4px;">行政区划</div>
-      <el-select v-model="searchCriteria.ProvinceId" placeholder="请选择省份" @change="handleProvinceChange" style="max-width:150px;">
-        <el-option :key="ALL_OPTION.id" :label="ALL_OPTION.fullname" :value="ALL_OPTION.id" />
-        <el-option v-for="item in provinces" :key="item.id" :label="item.fullname" :value="item.id" />
-      </el-select>
-      <el-select v-model="searchCriteria.MunicipalityId" placeholder="请选择城市" @change="handleCityChange" :disabled="!searchCriteria.ProvinceId || MUNICIPALITIES.includes(searchCriteria.ProvinceId)" style="max-width:150px;">
-        <el-option :key="ALL_OPTION.id" :label="ALL_OPTION.fullname" :value="ALL_OPTION.id" />
-        <el-option v-for="item in cities" :key="item.id" :label="item.fullname" :value="item.id" />
-      </el-select>
-      <el-select v-model="searchCriteria.DistrictId" placeholder="请选择区县" @change="handleDistrictChange" :disabled="!searchCriteria.MunicipalityId && !MUNICIPALITIES.includes(searchCriteria.ProvinceId)" style="max-width:150px;">
-        <el-option :key="ALL_OPTION.id" :label="ALL_OPTION.fullname" :value="ALL_OPTION.id" />
-        <el-option v-for="item in districts" :key="item.id" :label="item.fullname" :value="item.id" />
-      </el-select>
-      <el-select v-model="searchCriteria.TownshipStreetsId" placeholder="请选择街道/乡镇" @change="handleStreetChange" :disabled="!searchCriteria.DistrictId" style="max-width:150px;">
-        <el-option :key="ALL_OPTION.id" :label="ALL_OPTION.fullname" :value="ALL_OPTION.id" />
-        <el-option v-for="item in streets" :key="item.id" :label="item.fullname" :value="item.id" />
-      </el-select>
+      <!-- 替换为AreaSelector组件 -->
+      <AreaSelector
+        v-model:area="searchRegion"
+        style="flex:1;min-width:600px;"
+      />
       <el-button size="large" type="primary" style="margin-left:10px" @click="searchStaff">
         搜索
       </el-button>
+      <el-button size="large" v-if="localPermission==88||localPermission==2" type="success" style="margin-left:10px" @click="registerDialogVisible = true">
+        新增用户
+      </el-button>
+      <el-button
+      v-if="role==='Manager'||role==='SuperAdmin'"
+        size="large"
+        type="danger"
+        @click="showExportDialog = true"
+        >导出全部工作记录</el-button
+      >
+      <el-dialog v-model="showExportDialog" title="导出数据" width="500">
+        <ExportVisitDialog @close="showExportDialog = false" />
+      </el-dialog>
     </div>
 
     <!-- 工作人员列表 -->
@@ -492,13 +376,31 @@ const deleteStaff = (staff: StaffItem) => {
         <el-table-column prop="standby" label="备用邮箱" show-overflow-tooltip />
         <el-table-column prop="skill" label="技能" show-overflow-tooltip />
         
-        <el-table-column label="操作" width="220">
+        <el-table-column label="操作" width="300">
           <template #default="scope">
             <el-button type="primary" @click="showDetails(scope.row)">详情</el-button>
+            <el-button
+              v-if="role==='Manager'||role==='SuperAdmin'"
+              type="warning"
+              @click="resetPassword(scope.row)"
+              style="margin-left: 4px; width: 70px;"
+            >重置密码</el-button>
             <!-- <el-button type="danger" @click="deleteStaff(scope.row)">删除</el-button> -->
+            <!-- 修改：点击弹出单员工导出弹窗 -->
+            <el-button type="danger" style="width: 100px;margin-left: 4px;" @click="openStaffExportDialog(scope.row.uid, scope.row.name)">导出工作记录</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <div style="margin: 16px 0; text-align: right;">
+        <el-pagination
+          background
+          layout="prev, pager, next, jumper, total"
+          :total="totalCount"
+          :page-size="searchCriteria.PageSize"
+          :current-page="searchCriteria.PageIndex"
+          @current-change="(page) => { searchCriteria.PageIndex = page; searchStaff(); }"
+        />
+      </div>
     </div>
   </div>
 
@@ -546,6 +448,27 @@ const deleteStaff = (staff: StaffItem) => {
       <el-button @click="cancelEdit" v-if="isEditMode">取消</el-button>
       <el-button v-if="isEditMode" type="success" @click="saveChanges">保存</el-button>
     </template>
+  </el-dialog>
+
+  <!-- 新增：注册弹窗 -->
+  <el-dialog v-model="registerDialogVisible" width="600px" title="新增用户" destroy-on-close>
+    <RegisterForm @register-success="handleRegisterSuccess" />
+  </el-dialog>
+
+  <!-- 新增：单员工导出弹窗，使用v-if销毁组件 -->
+  <el-dialog
+    v-model="showStaffExportDialog"
+    title="导出员工探访记录"
+    width="500"
+    @close="closeStaffExportDialog"
+    destroy-on-close
+  >
+    <ExportStaffVisitDialog
+      v-if="showStaffExportDialog"
+      :staff-uid="exportStaffUid"
+      :staff-name="exportStaffName"
+      @close="closeStaffExportDialog"
+    />
   </el-dialog>
 </template>
 

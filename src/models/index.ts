@@ -32,6 +32,7 @@ export interface EnrollHouseHoldSpouseRequests
     photo:string,
     identificationNumber:string,
     householdRegistLocation:string,
+    currentPlace:string,
     gender:string,
     birthDate:string,
     ethnicity:string,

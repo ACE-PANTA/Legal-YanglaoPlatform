@@ -50,8 +50,8 @@ export function GetBaseInfoList(data, userRole) {
             url: baseUrl + '/Family/ManagerGetFamilyFromRegion',
             method: 'post',
             data: {
-                PageIndex: data.PageIndex,
-                PageSize: data.PageSize,
+                PageIndex: data.pagenumber,
+                PageSize: data.pageSize,
                 HouseHoldName: data.HouseHoldName || '',
                 IdentificationNumber: data.IdentificationNumber || '',
                 ProvinceId: data.ProvinceId,
@@ -73,6 +73,23 @@ export function GetFamilyListByArea(data: any) {
     })
 }
 
+// 查询临时人员信息
+export function GetTempFamilyInfo(data: any) {
+    return request({
+        url: baseUrl + '/TempData/SearchTempFamilyInfo', // 注意url前缀
+        method: 'post',
+        data:data
+    })
+}
+
+export function UpdateRegionInfo(data: any) {
+    return request({
+        url: baseUrl + '/Family/UpdateRegion', // 注意url前缀
+        method: 'post',
+        data:data
+    })
+}
+
 export { UpdateStaffPhoto } from './staff'
 
 export const GetOneFamilyWithUid = (uid: string) => {
@@ -80,5 +97,13 @@ export const GetOneFamilyWithUid = (uid: string) => {
         url: baseUrl+`/Family/GetOneFamilyWithUid`,
         method: 'get',
         params: { familyUid:uid }
+    });
+};
+
+export const getPicture = (photoKey:string) => {
+    return request({
+        url: baseUrl+`/Family/GetHouseHoldSpousePhoto`,
+        method: 'get',
+        params: { photoKey: photoKey }
     });
 };

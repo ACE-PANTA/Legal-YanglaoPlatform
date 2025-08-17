@@ -10,7 +10,7 @@
       </div>
       <el-button size="large" type="primary" style="margin-right:10px" @click="searchVolunteer">搜索</el-button>
       <el-button size="large" type="primary" style="margin-right:10px" @click="openAddDialog">添加</el-button>
-      <el-button size="large" type="primary" @click="exportVolunteer">导出</el-button>
+      <!-- <el-button size="large" type="primary" @click="exportVolunteer">导出</el-button> -->
     </div>
   </div>
   <!-- 表格信息 -->
@@ -116,7 +116,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
-import ChinaAeraSelect from '@/components/ChinaAeraSelect.vue';
 import { Edit, DeleteFilled } from '@element-plus/icons-vue';
 import { AddVolunteer, DeleteVolunteer, GetVolunteerList, SearchVolunteer, UpdateVolunteer } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'

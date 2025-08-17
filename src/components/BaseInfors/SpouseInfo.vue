@@ -4,14 +4,19 @@
             <el-button type="info" style="width: 15%;" @click="$emit('goBack')">返回</el-button>
             <h2 style="width: 70%;text-align: center;font-weight: 700;">配偶信息</h2>
         </div>
-        <el-form :model="data" label-width="120px" label-position="left">
-            <div class="title">
-                基本信息
+        <el-form :model="data" label-width="120px" label-position="left" v-if="data.name!=null&&data.name!=''">
+            <div class="title">基本信息</div>
+            <div v-if="data.photoUrl!='无'">
+              <img :src="processedPhotoUrl" alt="配偶照片" style="width: 50%; margin-left: 25%;margin-right: 25%;"/>
+            </div>
+            <div v-else class="nopic" style="margin-bottom: 20px;">
+              未设置图片
             </div>
             <el-form-item label="姓名">{{ data.name }}</el-form-item>
             <el-form-item label="身份证号">{{ data.identificationNumber }}</el-form-item>
             <el-form-item label="性别">{{ data.gender }}</el-form-item>
             <el-form-item label="户口所在地">{{ data.householdRegistLocation }}</el-form-item>
+            <el-form-item label="现住址">{{ data.currentPlace }}</el-form-item>
             <el-form-item label="出生日期">{{ data.birthDate }}</el-form-item>
             <el-form-item label="民族">{{ data.ethnicity }}</el-form-item>
             <el-form-item label="地域">{{ data.region }}</el-form-item>
@@ -50,19 +55,71 @@
             <el-form-item label="其他保障">{{ data.socialSecurityInformation.otherBenefits }}</el-form-item>
             <el-form-item label="就业扶持">{{ data.socialSecurityInformation.employmentSupport }}</el-form-item>
         </el-form>
+        <el-form v-else>
+            <div> 
+                无信息
+            </div>
+        </el-form>
     </div>
 </template>
 
 <script lang="ts" setup>
-defineProps({
+import { ref, onMounted } from 'vue'
+import { getPicture } from '@/api/family'
+import { log } from 'console';
+
+// 定义props接收数据
+const props = defineProps({
     data: {
         type: Object,
         required: true
     }
 });
+
+// 创建响应式变量存储处理后的照片URL
+const processedPhotoUrl = ref('');
+
+// 处理照片的函数
+const processPhoto = async () => {
+  try {
+    getPicture(props.data.photoUrl).then(response => {
+      if(response.data)
+        {
+          processedPhotoUrl.value = response.data.data;
+          
+        }
+    });
+    
+  } catch (error) {
+    console.error('照片处理错误:', error);
+    // 失败时使用原始URL或占位图
+    processedPhotoUrl.value = props.data.photoUrl || 'placeholder.jpg';
+  }
+};
+
+// 组件挂载时执行处理
+onMounted(() => {
+  if (props.data.photoUrl) {
+    processPhoto();
+  } else {
+    console.warn('缺少照片URL');
+    processedPhotoUrl.value = ''; // 删除占位图逻辑
+  }
+});
 </script>
 
 <style scoped>
+.nopic{
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #fd3535;
+    width: 50%;
+    margin-left: 25%;
+    margin-right: 25%;
+    border-bottom: solid 1px #ea424270;
+}
 .title{
     font-size: 20px;
     font-weight: bold;

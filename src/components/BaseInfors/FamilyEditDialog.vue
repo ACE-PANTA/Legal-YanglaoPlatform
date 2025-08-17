@@ -16,69 +16,145 @@
     </el-form-item>
     
     <div class="title">行政区划</div>
-    
-    <el-form-item label="省份" prop="ProvinceId">
-      <el-select 
-        v-model="familyInfo.ProvinceId" 
-        placeholder="请选择省份"
-        @change="handleProvinceChange"
-      >
-        <el-option 
-          v-for="item in provinces"
-          :key="item.id"
-          :label="item.fullname"
-          :value="item.id"
-        />
-      </el-select>
-    </el-form-item>
-    
-    <el-form-item v-if="!MUNICIPALITIES.includes(familyInfo.ProvinceId)" label="城市" prop="MunicipalityId">
-      <el-select 
-        v-model="familyInfo.MunicipalityId" 
-        placeholder="请选择城市"
-        @change="handleCityChange"
-        :disabled="!familyInfo.ProvinceId"
-      >
-        <el-option 
-          v-for="item in cities"
-          :key="item.id"
-          :label="item.fullname"
-          :value="item.id"
-        />
-      </el-select>
-    </el-form-item>
-    
-    <el-form-item label="区县" prop="DistrictId">
-      <el-select 
-        v-model="familyInfo.DistrictId" 
-        placeholder="请选择区县"
-        @change="handleDistrictChange"
-        :disabled="!MUNICIPALITIES.includes(familyInfo.ProvinceId) && !familyInfo.MunicipalityId"
-      >
-        <el-option 
-          v-for="item in districts"
-          :key="item.id"
-          :label="item.fullname"
-          :value="item.id"
-        />
-      </el-select>
-    </el-form-item>
-
-    <el-form-item label="街道/乡镇" prop="TownshipStreetsId">
-      <el-select 
-        v-model="familyInfo.TownshipStreetsId" 
-        placeholder="请选择街道/乡镇"
-        @change="handleStreetChange"
-        :disabled="!familyInfo.DistrictId"
-      >
-        <el-option 
-          v-for="item in streets"
-          :key="item.id"
-          :label="item.fullname"
-          :value="item.id"
-        />
-      </el-select>
-    </el-form-item>
+    <template v-if="familyInfo.townshipStreetsName">
+      <el-form-item label="行政区划" >
+        <span style="font-weight:bold;color:#3382f1;">
+          {{ [familyInfo.provinceName, familyInfo.municipalityName, familyInfo.districtName, familyInfo.townshipStreetsName].filter(Boolean).join(' / ') }}
+        </span>
+        <el-button type="primary" size="small" style="margin-left:16px;" @click="editMode = true">修改</el-button>
+      </el-form-item>
+      <template v-if="editMode">
+        <el-form-item label="省份" prop="ProvinceId">
+          <el-select 
+            v-model="familyInfo.ProvinceId" 
+            placeholder="请选择省份"
+            @change="handleProvinceChange"
+            :label="familyInfo.provinceName ? familyInfo.provinceName : undefined"
+          >
+            <el-option 
+              v-for="item in provinces"
+              :key="item.id"
+              :label="item.fullname"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="!MUNICIPALITIES.includes(familyInfo.ProvinceId)" label="城市" prop="MunicipalityId">
+          <el-select 
+            v-model="familyInfo.MunicipalityId" 
+            placeholder="请选择城市"
+            @change="handleCityChange"
+            :disabled="!familyInfo.ProvinceId"
+            :label="familyInfo.municipalityName ? familyInfo.municipalityName : undefined"
+          >
+            <el-option 
+              v-for="item in cities"
+              :key="item.id"
+              :label="item.fullname"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="区县" prop="DistrictId">
+          <el-select 
+            v-model="familyInfo.DistrictId" 
+            placeholder="请选择区县"
+            @change="handleDistrictChange"
+            :disabled="!MUNICIPALITIES.includes(familyInfo.ProvinceId) && !familyInfo.MunicipalityId"
+            :label="familyInfo.districtName ? familyInfo.districtName : undefined"
+          >
+            <el-option 
+              v-for="item in districts"
+              :key="item.id"
+              :label="item.fullname"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="街道/乡镇" prop="TownshipStreetsId">
+          <el-select 
+            v-model="familyInfo.TownshipStreetsId" 
+            placeholder="请选择街道/乡镇"
+            @change="handleStreetChange"
+            :disabled="!familyInfo.DistrictId"
+            :label="familyInfo.townshipStreetsName ? familyInfo.townshipStreetsName : undefined"
+          >
+            <el-option 
+              v-for="item in streets"
+              :key="item.id"
+              :label="item.fullname"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+      </template>
+    </template>
+    <template v-else>
+      <!-- 添加时直接显示四个下拉框 -->
+      <el-form-item label="省份" prop="ProvinceId">
+        <el-select 
+          v-model="familyInfo.ProvinceId" 
+          placeholder="请选择省份"
+          @change="handleProvinceChange"
+          :label="familyInfo.provinceName ? familyInfo.provinceName : undefined"
+        >
+          <el-option 
+            v-for="item in provinces"
+            :key="item.id"
+            :label="item.fullname"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item v-if="!MUNICIPALITIES.includes(familyInfo.ProvinceId)" label="城市" prop="MunicipalityId">
+        <el-select 
+          v-model="familyInfo.MunicipalityId" 
+          placeholder="请选择城市"
+          @change="handleCityChange"
+          :disabled="!familyInfo.ProvinceId"
+          :label="familyInfo.municipalityName ? familyInfo.municipalityName : undefined"
+        >
+          <el-option 
+            v-for="item in cities"
+            :key="item.id"
+            :label="item.fullname"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="区县" prop="DistrictId">
+        <el-select 
+          v-model="familyInfo.DistrictId" 
+          placeholder="请选择区县"
+          @change="handleDistrictChange"
+          :disabled="!MUNICIPALITIES.includes(familyInfo.ProvinceId) && !familyInfo.MunicipalityId"
+          :label="familyInfo.districtName ? familyInfo.districtName : undefined"
+        >
+          <el-option 
+            v-for="item in districts"
+            :key="item.id"
+            :label="item.fullname"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="街道/乡镇" prop="TownshipStreetsId">
+        <el-select 
+          v-model="familyInfo.TownshipStreetsId" 
+          placeholder="请选择街道/乡镇"
+          @change="handleStreetChange"
+          :disabled="!familyInfo.DistrictId"
+          :label="familyInfo.townshipStreetsName ? familyInfo.townshipStreetsName : undefined"
+        >
+          <el-option 
+            v-for="item in streets"
+            :key="item.id"
+            :label="item.fullname"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+    </template>
   </el-form>
 </template>
 
@@ -228,6 +304,8 @@ onMounted(async () => {
     }
   }
 })
+
+const editMode = ref(false)
 </script>
 
 <style scoped>

@@ -11,38 +11,46 @@
     <FamilyInfo v-else-if="currentSection === 'family'" @goBack="switchSection('main')" :data="data" />
 </template>
 
-<script lang="ts">
-export default {
-    name: 'DetailShowDialog',
-    props: {
-        data: {
-            type: Object,
-            required: true
-        }
-    },
-    computed: {
-        householdData() {
-            return this.data.listHouseHoldSpouse.find(item => item.relation === '户主') || {};
-        },
-        spouseData() {
-            return this.data.listHouseHoldSpouse.find(item => item.relation === '配偶') || {};
-        }
-    }
-}
-</script>
-
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import HouseholdInfo from './HouseholdInfo.vue';
 import SpouseInfo from './SpouseInfo.vue';
 import ChildrenInfo from './ChildrenInfo.vue';
 import FamilyInfo from './FamilyInfo.vue';
 
+// 使用defineProps替代选项式props
+const props = defineProps({
+    data: {
+        type: Object,
+        required: true
+    }
+});
+
+// 使用computed替代选项式计算属性
+let householdData = computed(() => {
+    return props.data.listHouseHoldSpouse.find(item => item.relation == '户主') || {};
+});
+let spouseData = computed(() => {
+    return props.data.listHouseHoldSpouse.find(item => item.relation == '配偶') || {};
+});
+
+onMounted(() => {
+    console.log('DetailShowDialog mounted with data:', props.data);
+});
+
+// 组合式API状态管理
 const currentSection = ref('main');
 
 function switchSection(section: string) {
     currentSection.value = section;
 }
+
+// 修改watch监听逻辑，处理数据初始化
+watch(() => props.data, (newVal) => {
+    if (!newVal || Object.keys(newVal).length === 0) {
+        currentSection.value = 'main';
+    }
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>
